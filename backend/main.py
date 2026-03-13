@@ -4,13 +4,12 @@ from database import engine, SessionLocal
 from typing import List
 import models
 import schemas
-from priority_engine import calculate_priority_score
+from priority_engine import calculate_dynamic_priority
 
 models.Base.metadata.create_all(bind=engine)
 
 app = FastAPI()
 
-# Veritabanı oturumu bağımlılığı
 def get_db():
     db = SessionLocal()
     try:
@@ -32,21 +31,20 @@ def create_request(request_data: schemas.RequestCreate, db: Session = Depends(ge
 
 @app.get("/talepler/oncelikli", response_model=List[schemas.PrioritizedRequestResponse])
 def get_prioritized_requests(db: Session = Depends(get_db)):
-    # Veritabanından tüm talepleri çek
     all_requests = db.query(models.DisasterRequest).all()
 
     results = []
     for req in all_requests:
-        score = calculate_priority_score(req.need_type)
+        score = calculate_dynamic_priority(req.need_type, req.created_at)
+
         results.append({
             "id": req.id,
             "latitude": req.latitude,
             "longitude": req.longitude,
             "need_type": req.need_type,
             "created_at": req.created_at,
-            "priority_score": score
+            "dynamic_priority_score": score
         })
 
-    # En yüksek puanlıdan en düşüğe sırala
-    results.sort(key=lambda x: x["priority_score"], reverse=True)
+    results.sort(key=lambda x: x["dynamic_priority_score"], reverse=True)
     return results

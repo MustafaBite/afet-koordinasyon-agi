@@ -19,6 +19,6 @@ class RequestResponse(RequestBase):
 class PrioritizedRequestResponse(RequestBase):
     id: UUID
     created_at: datetime
-    priority_score: int
+    dynamic_priority_score: float
 
     model_config = {"from_attributes": True}
