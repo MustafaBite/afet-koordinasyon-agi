@@ -64,14 +64,14 @@ Tüm talepleri **dinamik öncelik puanına göre en acilden en aza** sıralayara
     "need_type": "arama_kurtarma",
     "id": "uuid-formatinda-id",
     "created_at": "2026-03-12T08:00:00.000000",
-    "dynamic_priority_score": 187.5
+    "dynamic_priority_score": 85.5
   }
 ]
 ```
 
 | Alan | Açıklama |
 |------|----------|
-| **`dynamic_priority_score`** | **Sıralamanın yapıldığı asıl değer.** Zaman sönümleme formülüyle hesaplanan güncel puan |
+| **`dynamic_priority_score`** | **Sıralamanın yapıldığı asıl değer.** 0-100% aralığında normalize edilmiş güncel aciliyet yüzdesi. |
 
 ---
 
@@ -111,6 +111,6 @@ P_dynamic(t) = S_base + (S_base × λ × (t / M)) × (1 + C_i)
 | `database.py` | PostgreSQL veritabanı bağlantısı |
 | `models.py` | SQLAlchemy tablo modelleri (`disaster_requests`) |
 | `schemas.py` | Pydantic veri doğrulama şemaları |
-| `priority_engine.py` | Dinamik önceliklendirme motoru (DPS + MPDS) |
+| `priority_engine.py` | Dinamik önceliklendirme motoru |
 | `mock_data_generator.py` | İstanbul için sahte veri üreten bot (`python mock_data_generator.py`) |
 | `live_earthquake_data.py` | Kandilli API'sinden son depremleri çeken script |
