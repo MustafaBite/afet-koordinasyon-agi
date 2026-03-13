@@ -2,23 +2,23 @@ from pydantic import BaseModel
 from datetime import datetime
 from uuid import UUID
 
-class AfetzedeTalepBase(BaseModel):
+class RequestBase(BaseModel):
     latitude: float
     longitude: float
     need_type: str
 
-class AfetzedeTalepCreate(AfetzedeTalepBase):
+class RequestCreate(RequestBase):
     pass
 
-class AfetzedeTalepResponse(AfetzedeTalepBase):
+class RequestResponse(RequestBase):
     id: UUID
     created_at: datetime
 
     model_config = {"from_attributes": True}
 
-class OncelikliTalepResponse(AfetzedeTalepBase):
+class PrioritizedRequestResponse(RequestBase):
     id: UUID
     created_at: datetime
-    oncelik_puani: int
+    priority_score: int
 
     model_config = {"from_attributes": True}
