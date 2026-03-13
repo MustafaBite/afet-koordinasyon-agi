@@ -18,11 +18,80 @@ Bu proje, afet yönetimi ve koordinasyonu için geliştirilmiş, **FastAPI** ve 
    ```
    API dokümantasyonuna [http://127.0.0.1:8000/docs](http://127.0.0.1:8000/docs) adresinden erişebilirsiniz.
 
-## Dosya Yapısı ve Görevleri
+## API Endpoint'leri
 
-*   **`main.py`**: Ana FastAPI uygulaması ve uç noktalar (Örn: `/talep-gonder` POST endpoint'i).
-*   **`database.py`**: SQLAlchemy ile PostgreSQL veritabanı bağlantısı ayarları.
-*   **`models.py`**: Veritabanı tablolarının SQLAlchemy modelleri (Örn: `afetzede_talepleri` tablosu).
-*   **`schemas.py`**: Gelen/Giden verilerin Pydantic ile doğrulama şemaları.
-*   **`mock_data_generator.py`**: Yapay zeka eğitiminde kullanılmak üzere veritabanına İstanbul sınırlarında rastgele sahte çağrı (su, medikal vb.) verileri ekleyen bot (Çalıştırmak için: `python mock_data_generator.py`).
-*   **`live_earthquake_data.py`**: Kandilli Rasathanesi API'si üzerinden son depremleri çeken bağımsız script.
+### `GET /`
+Ana sayfa kontrolü.
+| Alan | Değer |
+|------|-------|
+| **Yanıt** | `{"message": "Afet Koordinasyon API çalışıyor"}` |
+
+---
+
+### `POST /talep-gonder`
+Yeni bir afetzede talebi oluşturur ve veritabanına kaydeder.
+
+**Gönderilecek JSON:**
+```json
+{
+  "latitude": 41.0082,
+  "longitude": 28.9784,
+  "need_type": "medikal"
+}
+```
+
+**Yanıt (201):**
+```json
+{
+  "latitude": 41.0082,
+  "longitude": 28.9784,
+  "need_type": "medikal",
+  "id": "uuid-formatinda-id",
+  "created_at": "2026-03-13T14:00:00.000000"
+}
+```
+
+---
+
+### `GET /talepler/oncelikli`
+Veritabanındaki tüm talepleri **öncelik puanına göre en acilden en aza** sıralayarak döndürür. Frontend bu endpoint'i çekerek listeyi gösterecek.
+
+**Yanıt (200):**
+```json
+[
+  {
+    "latitude": 41.01,
+    "longitude": 29.02,
+    "need_type": "arama_kurtarma",
+    "id": "uuid-formatinda-id",
+    "created_at": "2026-03-13T14:00:00.000000",
+    "oncelik_puani": 100
+  }
+]
+```
+
+**Öncelik Puan Tablosu:**
+
+| need_type | Puan | Açıklama |
+|-----------|------|----------|
+| arama_kurtarma | 100 | Enkaz altında kalan kişiler |
+| enkaz | 95 | Bina çökmesi, yapısal hasar |
+| medikal | 90 | Kanamalı yaralı, tıbbi müdahale |
+| yangin | 85 | Aktif yangın tehlikesi |
+| is_makinesi | 75 | İş makinesi talebi |
+| barinma | 60 | Çadır / hipotermi riski |
+| su | 50 | Temiz su ihtiyacı |
+| gida | 40 | Gıda / yemek ihtiyacı |
+| ulasim | 30 | Ulaşım desteği |
+
+## Dosya Yapısı
+
+| Dosya | Görevi |
+|-------|--------|
+| `main.py` | FastAPI uygulaması ve endpoint'ler |
+| `database.py` | PostgreSQL veritabanı bağlantısı |
+| `models.py` | SQLAlchemy tablo modelleri (`afetzede_talepleri`) |
+| `schemas.py` | Pydantic veri doğrulama şemaları |
+| `priority_engine.py` | İhtiyaç türüne göre öncelik puanlama motoru |
+| `mock_data_generator.py` | İstanbul için sahte veri üreten bot (`python mock_data_generator.py`) |
+| `live_earthquake_data.py` | Kandilli API'sinden son depremleri çeken script |

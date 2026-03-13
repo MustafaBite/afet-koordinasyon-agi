@@ -15,3 +15,10 @@ class AfetzedeTalepResponse(AfetzedeTalepBase):
     created_at: datetime
 
     model_config = {"from_attributes": True}
+
+class OncelikliTalepResponse(AfetzedeTalepBase):
+    id: UUID
+    created_at: datetime
+    oncelik_puani: int
+
+    model_config = {"from_attributes": True}
