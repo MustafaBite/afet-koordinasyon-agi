@@ -13,12 +13,13 @@ class RequestCreate(RequestBase):
 class RequestResponse(RequestBase):
     id: UUID
     created_at: datetime
-
+    is_verified: bool 
     model_config = {"from_attributes": True}
 
 class PrioritizedRequestResponse(RequestBase):
     id: UUID
     created_at: datetime
+    is_verified: bool
     dynamic_priority_score: float
 
     model_config = {"from_attributes": True}

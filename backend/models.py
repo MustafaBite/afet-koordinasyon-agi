@@ -1,4 +1,4 @@
-from sqlalchemy import Column, String, Float, DateTime
+from sqlalchemy import Boolean, Column, String, Float, DateTime
 from sqlalchemy.dialects.postgresql import UUID
 from database import Base
 import datetime
@@ -12,3 +12,4 @@ class DisasterRequest(Base):
     longitude = Column(Float)
     need_type = Column(String)
     created_at = Column(DateTime(timezone=True), default=datetime.datetime.utcnow)
+    is_verified = Column(Boolean, default=False)

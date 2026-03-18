@@ -1,23 +1,36 @@
 import requests
+from datetime import datetime, timedelta
 
-url = "https://api.orhanaydogdu.com.tr/deprem/kandilli/live"
+def get_last_24h_earthquakes():
 
-response = requests.get(url)
+    url = "https://api.orhanaydogdu.com.tr/deprem/kandilli/live"
 
-if response.status_code == 200:
+    response = requests.get(url)
+
+    if response.status_code != 200:
+        return []
 
     data = response.json()
 
-    print("\nLast 10 Earthquakes\n")
+    earthquakes = []
 
-    for earthquake in data["result"][:10]:
+    for eq in data["result"]:
+        # API yeni format: date_time, koordinatlar geojson.coordinates içinde [lon, lat]
+        time_str = eq.get("date_time") or eq.get("date")
+        if not time_str:
+            continue
 
-        print("----- Earthquake Info -----")
+        try:
+            eq_time = datetime.strptime(time_str, "%Y-%m-%d %H:%M:%S")
+        except ValueError:
+            continue
 
-        for key, value in earthquake.items():
-            print(f"{key}: {value}")
+        if eq_time > datetime.now() - timedelta(hours=24):
+            coords = eq.get("geojson", {}).get("coordinates", [])
+            if len(coords) >= 2:
+                earthquakes.append({
+                    "lon": float(coords[0]),
+                    "lat": float(coords[1]),
+                })
 
-        print("---------------------------\n")
-
-else:
-    print("API connection failed")
+    return earthquakes
