@@ -2,6 +2,7 @@ from pydantic import BaseModel, Field
 from datetime import datetime
 from uuid import UUID
 from models import RequestStatus, ClusterStatus
+  
 
 
 class RequestCreate(BaseModel):
@@ -58,3 +59,7 @@ class TaskPackageResponse(BaseModel):
     generated_at: datetime
 
     model_config = {"from_attributes": True}
+
+class AssignVehicleRequest(BaseModel):
+    vehicle_id: UUID
+    cluster_id: UUID

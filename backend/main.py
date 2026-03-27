@@ -1,8 +1,21 @@
-from fastapi import FastAPI
+from fastapi import FastAPI, Depends, Query, HTTPException 
 from fastapi.middleware.cors import CORSMiddleware
+from sqlalchemy.orm import Session
+from typing import List, Optional
 from database import engine
 import models
 from routers import requests, clusters
+
+import models
+import schemas 
+from database import engine, SessionLocal
+
+def get_db():
+    db = SessionLocal()
+    try:
+        yield db
+    finally:
+        db.close()
 
 models.Base.metadata.create_all(bind=engine)
 
@@ -184,3 +197,63 @@ def get_task_packages(
 @app.get("/health")
 def health_check():
     return {"status": "ok", "message": "Afet Koordinasyon API çalışıyor"}
+
+@app.put("/requests/{request_id}/status")
+def update_request_status(
+    request_id: str,
+    data: schemas.StatusUpdate,
+    db: Session = Depends(get_db)
+):
+    request = db.query(models.DisasterRequest).filter(
+        models.DisasterRequest.id == request_id
+    ).first()
+
+    if not request:
+        raise HTTPException(status_code=404, detail="Request not found")
+
+    request.status = data.status
+
+    db.commit()
+    db.refresh(request)
+
+    return request
+#
+from schemas import AssignVehicleRequest
+
+@app.post("/assign-vehicle")
+def assign_vehicle(data: AssignVehicleRequest, db: Session = Depends(get_db)):
+
+    # 1️⃣ Araç bul
+    vehicle = db.query(models.ReliefVehicle).filter(
+        models.ReliefVehicle.id == data.vehicle_id
+    ).first()
+
+    if not vehicle:
+        raise HTTPException(status_code=404, detail="Vehicle not found")
+
+    # 2️⃣ Cluster bul
+    cluster = db.query(models.Cluster).filter(
+        models.Cluster.id == data.cluster_id
+    ).first()
+
+    if not cluster:
+        raise HTTPException(status_code=404, detail="Cluster not found")
+
+    # 3️⃣ Kaç kişi? (ihtiyaç miktarı)
+    needed = cluster.total_persons_affected
+
+    # 4️⃣ Stok kontrolü
+    if vehicle.tent_count < needed:
+        raise HTTPException(status_code=400, detail="Not enough tent stock")
+
+    # 5️⃣ STOK DÜŞÜR 💥
+    vehicle.tent_count -= needed
+
+    # 6️⃣ Commit
+    db.commit()
+    db.refresh(vehicle)
+
+    return {
+        "message": "Vehicle assigned and stock updated",
+        "remaining_tents": vehicle.tent_count
+    }
