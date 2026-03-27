@@ -1,27 +1,31 @@
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 from datetime import datetime
 from uuid import UUID
+from models import RequestStatus, ClusterStatus
 
-class RequestBase(BaseModel):
+
+class RequestCreate(BaseModel):
     latitude: float
     longitude: float
     need_type: str
+    person_count: int = Field(default=1, ge=1)
+    description: str | None = None
 
-class RequestCreate(RequestBase):
-    pass
 
-class RequestResponse(RequestBase):
+class RequestResponse(RequestCreate):
     id: UUID
+    status: RequestStatus
     created_at: datetime
 
     model_config = {"from_attributes": True}
 
-class PrioritizedRequestResponse(RequestBase):
-    id: UUID
-    created_at: datetime
+
+class PrioritizedRequestResponse(RequestResponse):
     dynamic_priority_score: float
 
-    model_config = {"from_attributes": True}
+
+class StatusUpdate(BaseModel):
+    status: RequestStatus
 
 
 class ClusterLocation(BaseModel):
@@ -31,14 +35,26 @@ class ClusterLocation(BaseModel):
     full_address: str | None = None
 
 
+class StatusSummary(BaseModel):
+    pending: int
+    assigned: int
+    resolved: int
+
+
 class TaskPackageResponse(BaseModel):
-    cluster_id: int
+    cluster_id: UUID
     need_type: str
     cluster_name: str
     center_latitude: float
     center_longitude: float
     location: ClusterLocation
     request_count: int
+    total_persons_affected: int
     average_priority_score: float
     priority_level: str
-    request_ids: list[str]
+    status_summary: StatusSummary
+    is_noise_cluster: bool
+    status: ClusterStatus
+    generated_at: datetime
+
+    model_config = {"from_attributes": True}

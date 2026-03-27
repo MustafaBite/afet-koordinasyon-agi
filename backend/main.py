@@ -1,30 +1,24 @@
-from fastapi import FastAPI, Depends, HTTPException, Query
+from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from sqlalchemy.orm import Session
-from database import engine, SessionLocal
-from typing import List, Optional
+from database import engine
 import models
-import schemas
-from priority_engine import calculate_dynamic_priority
-from clustering_engine import generate_task_packages
+from routers import requests, clusters
 
 models.Base.metadata.create_all(bind=engine)
 
-app = FastAPI()
+app = FastAPI(title="Afet Koordinasyon API", version="1.0.0")
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"], 
+    allow_origins=["*"],
     allow_credentials=True,
-    allow_methods=["*"], 
+    allow_methods=["*"],
     allow_headers=["*"],
 )
 
-def get_db():
-    db = SessionLocal()
-    try:
-        yield db
-    finally:
-        db.close()
+app.include_router(requests.router)
+app.include_router(clusters.router)
+
 
 @app.get("/")
 def read_root():
@@ -187,3 +181,6 @@ def get_task_packages(
     """
     packages = generate_task_packages(db, need_type_filter=need_type)
     return packages
+@app.get("/health")
+def health_check():
+    return {"status": "ok", "message": "Afet Koordinasyon API çalışıyor"}

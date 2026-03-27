@@ -35,7 +35,8 @@ def generate_mock_data(num_records: int = 500):
             request_item = models.DisasterRequest(
                 need_type=random.choice(CATEGORIES),
                 latitude=round(random.uniform(LAT_MIN, LAT_MAX), 6),
-                longitude=round(random.uniform(LON_MIN, LON_MAX), 6)
+                longitude=round(random.uniform(LON_MIN, LON_MAX), 6),
+                person_count=random.randint(1, 20),
             )
             request_list.append(request_item)
 
@@ -78,6 +79,7 @@ def generate_clustered_mock_data(num_clusters: int = 10, requests_per_cluster: i
                     need_type=need_type,
                     latitude=lat,
                     longitude=lon,
+                    person_count=random.randint(1, 20),
                 )
                 request_list.append(request_item)
 
