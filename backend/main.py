@@ -1,4 +1,4 @@
-from live_earthquake_data import get_last_24h_earthquakes
+from live_earthquake_data import get_last_24h_earthquakes, get_major_earthquakes_last_3_months
 from fastapi import FastAPI, Depends, HTTPException, Query
 from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy.orm import Session
@@ -176,6 +176,11 @@ def update_vehicle(vehicle_id: str, data: schemas.VehicleUpdate, db: Session = D
     db.commit()
     db.refresh(vehicle)
     return vehicle
+
+@app.get("/buyuk-depremler")
+def get_major_earthquakes():
+    """Son 3 ayda Türkiye'de gerçekleşen 5.0+ büyüklüğündeki depremler (yeniden eskiye)."""
+    return get_major_earthquakes_last_3_months()
 
 @app.post("/assign-vehicle")
 def assign_vehicle(data: schemas.AssignVehicleRequest, db: Session = Depends(get_db)):
