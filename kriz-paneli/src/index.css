@@ -21,6 +21,7 @@
 
 .material-symbols-outlined { font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24; }
 
+/* Sidebar Logo */
 .afad-logo-container {
   display: flex;
   align-items: center;
@@ -33,7 +34,7 @@
 }
 .turk-flag-circle {
   position: absolute;
-  top: -4px;
+  top: -2px;
   right: -10px;
   width: 14px;
   height: 14px;
@@ -48,5 +49,36 @@
 .turk-flag-circle::after {
   content: '☪';
   font-size: 10px;
+  margin-left: 1px;
+}
+
+/* Login/Register Logo */
+.afad-auth-logo {
+  display: inline-block;
+  position: relative;
+}
+.afad-auth-text {
+  font-weight: 800;
+  letter-spacing: -0.05em;
+  line-height: 1;
+  display: inline-block;
+}
+.afad-auth-flag {
+  position: absolute;
+  top: 0;
+  right: -8px;
+  width: 16px;
+  height: 16px;
+  background-color: #e11d48;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: white;
+  font-size: 8px;
+}
+.afad-auth-flag::after {
+  content: '☪';
+  font-size: 11px;
   margin-left: 1px;
 }

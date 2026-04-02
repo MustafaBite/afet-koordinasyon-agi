@@ -103,6 +103,17 @@ class UserLogin(BaseModel):
     password: str
 
 
+class UserUpdate(BaseModel):
+    first_name: str | None = None
+    last_name: str | None = None
+    phone: str | None = None
+    expertise_area: str | None = None
+    organization: str | None = None
+    city: str | None = None
+    district: str | None = None
+    profile_photo_url: str | None = None
+
+
 class UserResponse(BaseModel):
     id: UUID
     email: str

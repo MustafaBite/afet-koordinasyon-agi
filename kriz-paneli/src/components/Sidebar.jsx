@@ -1,6 +1,6 @@
 import { USER_ROLES } from '../constants/formOptions';
 
-export default function Sidebar({ user }) {
+export default function Sidebar({ user, currentView, onNavigate }) {
   const userRole = user ? USER_ROLES[user.role] : 'Kullanıcı';
   const userName = user ? `${user.first_name} ${user.last_name}` : 'Kullanıcı';
   const userPhoto = user?.profile_photo_url || `https://ui-avatars.com/api/?name=${encodeURIComponent(userName)}&background=136dec&color=fff`;
@@ -18,10 +18,17 @@ export default function Sidebar({ user }) {
       </div>
       
       <nav className="flex-1 px-4 py-4 space-y-1">
-        <a className="flex items-center gap-3 px-4 py-3 rounded-xl bg-primary text-white font-medium transition-all" href="#">
+        <button
+          onClick={() => onNavigate('dashboard')}
+          className={`flex items-center gap-3 px-4 py-3 rounded-xl font-medium transition-all w-full text-left ${
+            currentView === 'dashboard'
+              ? 'bg-primary text-white'
+              : 'text-slate-600 dark:text-slate-400 hover:bg-slate-200 dark:hover:bg-slate-800'
+          }`}
+        >
           <span className="material-symbols-outlined">warning</span>
           <span>Aktif İhbarlar</span>
-        </a>
+        </button>
         <a className="flex items-center gap-3 px-4 py-3 rounded-xl text-slate-600 dark:text-slate-400 hover:bg-slate-200 dark:hover:bg-slate-800 font-medium transition-all" href="#">
           <span className="material-symbols-outlined">map</span>
           <span>Harita Görünümü</span>
@@ -38,10 +45,17 @@ export default function Sidebar({ user }) {
       </nav>
 
       <div className="p-4 mt-auto border-t border-slate-200 dark:border-slate-800">
-        <a className="flex items-center gap-3 px-4 py-3 rounded-xl text-slate-600 dark:text-slate-400 hover:bg-slate-200 dark:hover:bg-slate-800 font-medium transition-all" href="#">
+        <button
+          onClick={() => onNavigate('profile')}
+          className={`flex items-center gap-3 px-4 py-3 rounded-xl font-medium transition-all w-full text-left ${
+            currentView === 'profile'
+              ? 'bg-slate-200 dark:bg-slate-800'
+              : 'text-slate-600 dark:text-slate-400 hover:bg-slate-200 dark:hover:bg-slate-800'
+          }`}
+        >
           <span className="material-symbols-outlined">settings</span>
-          <span>Ayarlar</span>
-        </a>
+          <span>Profil Ayarları</span>
+        </button>
         <div className="mt-4 p-4 rounded-xl bg-slate-200 dark:bg-slate-800 flex items-center gap-3">
           <div className="size-8 rounded-full bg-slate-400 overflow-hidden">
             <img alt={userName} className="w-full h-full object-cover" src={userPhoto} />

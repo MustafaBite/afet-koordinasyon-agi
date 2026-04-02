@@ -67,9 +67,9 @@ export default function Login({ onLoginSuccess, onSwitchToRegister }) {
         
         {/* Logo ve Başlık */}
         <div className="text-center mb-8">
-          <div className="afad-logo-container scale-125 justify-center mb-4">
-            <span className="afad-text text-4xl text-afad-blue dark:text-white">AFAD</span>
-            <div className="turk-flag-circle"></div>
+          <div className="afad-auth-logo inline-block mb-4">
+            <span className="afad-auth-text text-5xl text-afad-blue dark:text-white">AFAD</span>
+            <div className="afad-auth-flag"></div>
           </div>
           <h1 className="text-2xl font-bold mt-6 mb-2">Kriz Yönetim Sistemi</h1>
           <p className="text-slate-500 dark:text-slate-400 text-sm">

@@ -1,10 +1,7 @@
 import { useState, useEffect } from 'react';
 import { authService } from '../services/authService';
 import { 
-  validateEmail, 
-  validatePassword, 
   validatePhone, 
-  validateTCIdentity, 
   validateRequired,
   validateURL 
 } from '../utils/validation';
@@ -13,16 +10,11 @@ import Input from '../components/common/Input';
 import Select from '../components/common/Select';
 import Button from '../components/common/Button';
 
-export default function Register({ onRegisterSuccess, onSwitchToLogin }) {
+export default function Profile({ user, onUpdateSuccess }) {
   const [formData, setFormData] = useState({
-    email: '',
-    password: '',
-    password_confirm: '',
     first_name: '',
     last_name: '',
-    tc_identity_no: '',
     phone: '',
-    role: '',
     expertise_area: '',
     organization: '',
     city: '',
@@ -33,7 +25,34 @@ export default function Register({ onRegisterSuccess, onSwitchToLogin }) {
   const [errors, setErrors] = useState({});
   const [loading, setLoading] = useState(false);
   const [apiError, setApiError] = useState(null);
+  const [successMessage, setSuccessMessage] = useState(null);
   const [availableDistricts, setAvailableDistricts] = useState({});
+
+  // User bilgilerini form'a yükle
+  useEffect(() => {
+    if (user) {
+      setFormData({
+        first_name: user.first_name || '',
+        last_name: user.last_name || '',
+        phone: user.phone || '',
+        expertise_area: user.expertise_area || '',
+        organization: user.organization || '',
+        city: user.city || '',
+        district: user.district || '',
+        profile_photo_url: user.profile_photo_url || ''
+      });
+
+      // İlçeleri yükle
+      if (user.city && CITIES_DISTRICTS[user.city]) {
+        setAvailableDistricts(
+          CITIES_DISTRICTS[user.city].reduce((acc, district) => {
+            acc[district] = district;
+            return acc;
+          }, {})
+        );
+      }
+    }
+  }, [user]);
 
   // Şehir değiştiğinde ilçeleri güncelle
   useEffect(() => {
@@ -45,9 +64,11 @@ export default function Register({ onRegisterSuccess, onSwitchToLogin }) {
         }, {}) || {}
       );
       // Şehir değiştiğinde ilçeyi sıfırla
-      setFormData(prev => ({ ...prev, district: '' }));
+      if (formData.city !== user?.city) {
+        setFormData(prev => ({ ...prev, district: '' }));
+      }
     }
-  }, [formData.city]);
+  }, [formData.city, user?.city]);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -57,41 +78,22 @@ export default function Register({ onRegisterSuccess, onSwitchToLogin }) {
       setErrors(prev => ({ ...prev, [name]: null }));
     }
     setApiError(null);
+    setSuccessMessage(null);
   };
 
   const validateForm = () => {
     const newErrors = {};
     
-    // Temel bilgiler
-    const emailError = validateEmail(formData.email);
-    if (emailError) newErrors.email = emailError;
-    
-    const passwordError = validatePassword(formData.password);
-    if (passwordError) newErrors.password = passwordError;
-    
-    if (formData.password !== formData.password_confirm) {
-      newErrors.password_confirm = 'Şifreler eşleşmiyor';
-    }
-    
-    // Kişisel bilgiler
     const firstNameError = validateRequired(formData.first_name, 'Ad');
     if (firstNameError) newErrors.first_name = firstNameError;
     
     const lastNameError = validateRequired(formData.last_name, 'Soyad');
     if (lastNameError) newErrors.last_name = lastNameError;
     
-    const tcError = validateTCIdentity(formData.tc_identity_no);
-    if (tcError) newErrors.tc_identity_no = tcError;
-    
     const phoneError = validatePhone(formData.phone);
     if (phoneError) newErrors.phone = phoneError;
     
-    // Rol
-    const roleError = validateRequired(formData.role, 'Rol');
-    if (roleError) newErrors.role = roleError;
-    
-    // Uzmanlık ve organizasyon (volunteer/coordinator için zorunlu)
-    const needsExpertise = ['volunteer', 'coordinator'].includes(formData.role);
+    const needsExpertise = ['volunteer', 'coordinator'].includes(user?.role);
     if (needsExpertise) {
       const expertiseError = validateRequired(formData.expertise_area, 'Uzmanlık Alanı');
       if (expertiseError) newErrors.expertise_area = expertiseError;
@@ -100,14 +102,12 @@ export default function Register({ onRegisterSuccess, onSwitchToLogin }) {
       if (orgError) newErrors.organization = orgError;
     }
     
-    // Lokasyon
     const cityError = validateRequired(formData.city, 'Şehir');
     if (cityError) newErrors.city = cityError;
     
     const districtError = validateRequired(formData.district, 'İlçe');
     if (districtError) newErrors.district = districtError;
     
-    // Profil fotoğrafı (opsiyonel)
     if (formData.profile_photo_url) {
       const urlError = validateURL(formData.profile_photo_url);
       if (urlError) newErrors.profile_photo_url = urlError;
@@ -124,17 +124,31 @@ export default function Register({ onRegisterSuccess, onSwitchToLogin }) {
 
     setLoading(true);
     setApiError(null);
+    setSuccessMessage(null);
 
     try {
-      // password_confirm'i backend'e gönderme
-      const { password_confirm, ...dataToSend } = formData;
-      
-      const response = await authService.register(dataToSend);
+      const token = authService.getToken();
+      const response = await fetch('/auth/me', {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify(formData)
+      });
 
-      authService.saveToken(response.access_token);
-      authService.saveUser(response.user);
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.detail || 'Güncelleme başarısız');
+      }
+
+      const updatedUser = await response.json();
+      authService.saveUser(updatedUser);
+      setSuccessMessage('Profil başarıyla güncellendi!');
       
-      onRegisterSuccess(response.user);
+      if (onUpdateSuccess) {
+        onUpdateSuccess(updatedUser);
+      }
     } catch (error) {
       setApiError(error.message);
     } finally {
@@ -142,27 +156,32 @@ export default function Register({ onRegisterSuccess, onSwitchToLogin }) {
     }
   };
 
-  const needsExpertise = ['volunteer', 'coordinator'].includes(formData.role);
+  const needsExpertise = ['volunteer', 'coordinator'].includes(user?.role);
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 dark:from-slate-900 dark:to-slate-800 flex items-center justify-center p-4 py-12">
-      <div className="w-full max-w-4xl">
+    <div className="flex-1 overflow-y-auto p-8">
+      <div className="max-w-4xl mx-auto">
         
-        {/* Logo ve Başlık */}
-        <div className="text-center mb-8">
-          <div className="afad-auth-logo inline-block mb-4">
-            <span className="afad-auth-text text-5xl text-afad-blue dark:text-white">AFAD</span>
-            <div className="afad-auth-flag"></div>
-          </div>
-          <h1 className="text-2xl font-bold mt-6 mb-2">Kriz Yönetim Sistemi</h1>
-          <p className="text-slate-500 dark:text-slate-400 text-sm">
-            Yeni hesap oluşturun
+        {/* Başlık */}
+        <div className="mb-8">
+          <h1 className="text-2xl font-bold mb-2">Profil Ayarları</h1>
+          <p className="text-slate-500 dark:text-slate-400">
+            Kişisel bilgilerinizi görüntüleyin ve güncelleyin
           </p>
         </div>
 
         {/* Form Kartı */}
         <div className="bg-white dark:bg-slate-900 rounded-2xl shadow-xl border border-slate-200 dark:border-slate-800 p-8">
           
+          {/* Başarı Mesajı */}
+          {successMessage && (
+            <div className="mb-6 bg-green-500/10 border border-green-500/30 text-green-600 dark:text-green-400 px-4 py-3 rounded-xl text-sm flex items-center gap-2">
+              <span className="material-symbols-outlined text-lg">check_circle</span>
+              {successMessage}
+            </div>
+          )}
+
+          {/* Hata Mesajı */}
           {apiError && (
             <div className="mb-6 bg-red-500/10 border border-red-500/30 text-red-600 dark:text-red-400 px-4 py-3 rounded-xl text-sm flex items-center gap-2">
               <span className="material-symbols-outlined text-lg">error</span>
@@ -170,80 +189,34 @@ export default function Register({ onRegisterSuccess, onSwitchToLogin }) {
             </div>
           )}
 
-          <form onSubmit={handleSubmit} className="space-y-6">
-
-            {/* Temel Bilgiler */}
-            <div className="space-y-4">
-              <h3 className="text-sm font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wide flex items-center gap-2">
-                <span className="material-symbols-outlined text-primary">account_circle</span>
-                Temel Bilgiler
-              </h3>
-              
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <Input
-                  label="E-posta Adresi"
-                  type="email"
-                  name="email"
-                  value={formData.email}
-                  onChange={handleChange}
-                  error={errors.email}
-                  placeholder="ornek@email.com"
-                  required
-                  icon="mail"
-                  autoComplete="email"
-                />
-
-                <Input
-                  label="Telefon"
-                  type="tel"
-                  name="phone"
-                  value={formData.phone}
-                  onChange={handleChange}
-                  error={errors.phone}
-                  placeholder="05xxxxxxxxx"
-                  required
-                  icon="phone"
-                  autoComplete="tel"
-                />
+          {/* Kullanıcı Bilgileri (Read-only) */}
+          <div className="mb-6 p-4 bg-slate-50 dark:bg-slate-800 rounded-xl">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
+              <div>
+                <span className="text-slate-500 dark:text-slate-400">E-posta:</span>
+                <p className="font-semibold">{user?.email}</p>
               </div>
-
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <Input
-                  label="Şifre"
-                  type="password"
-                  name="password"
-                  value={formData.password}
-                  onChange={handleChange}
-                  error={errors.password}
-                  placeholder="En az 8 karakter"
-                  required
-                  icon="lock"
-                  autoComplete="new-password"
-                />
-
-                <Input
-                  label="Şifre Tekrar"
-                  type="password"
-                  name="password_confirm"
-                  value={formData.password_confirm}
-                  onChange={handleChange}
-                  error={errors.password_confirm}
-                  placeholder="Şifrenizi tekrar girin"
-                  required
-                  icon="lock"
-                  autoComplete="new-password"
-                />
+              <div>
+                <span className="text-slate-500 dark:text-slate-400">TC Kimlik No:</span>
+                <p className="font-semibold">{user?.tc_identity_no}</p>
+              </div>
+              <div>
+                <span className="text-slate-500 dark:text-slate-400">Rol:</span>
+                <p className="font-semibold">{USER_ROLES[user?.role]}</p>
               </div>
             </div>
+          </div>
 
+          <form onSubmit={handleSubmit} className="space-y-6">
+            
             {/* Kişisel Bilgiler */}
-            <div className="space-y-4 pt-4 border-t border-slate-200 dark:border-slate-800">
+            <div className="space-y-4">
               <h3 className="text-sm font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wide flex items-center gap-2">
-                <span className="material-symbols-outlined text-primary">badge</span>
+                <span className="material-symbols-outlined text-primary">person</span>
                 Kişisel Bilgiler
               </h3>
               
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <Input
                   label="Ad"
                   type="text"
@@ -251,9 +224,7 @@ export default function Register({ onRegisterSuccess, onSwitchToLogin }) {
                   value={formData.first_name}
                   onChange={handleChange}
                   error={errors.first_name}
-                  placeholder="Adınız"
                   required
-                  icon="person"
                   autoComplete="given-name"
                 />
 
@@ -264,46 +235,33 @@ export default function Register({ onRegisterSuccess, onSwitchToLogin }) {
                   value={formData.last_name}
                   onChange={handleChange}
                   error={errors.last_name}
-                  placeholder="Soyadınız"
                   required
-                  icon="person"
                   autoComplete="family-name"
                 />
-
-                <Input
-                  label="TC Kimlik No"
-                  type="text"
-                  name="tc_identity_no"
-                  value={formData.tc_identity_no}
-                  onChange={handleChange}
-                  error={errors.tc_identity_no}
-                  placeholder="11 haneli"
-                  required
-                  icon="fingerprint"
-                />
               </div>
+
+              <Input
+                label="Telefon"
+                type="tel"
+                name="phone"
+                value={formData.phone}
+                onChange={handleChange}
+                error={errors.phone}
+                placeholder="05xxxxxxxxx"
+                required
+                icon="phone"
+                autoComplete="tel"
+              />
             </div>
 
-            {/* Rol ve Yetki */}
-            <div className="space-y-4 pt-4 border-t border-slate-200 dark:border-slate-800">
-              <h3 className="text-sm font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wide flex items-center gap-2">
-                <span className="material-symbols-outlined text-primary">shield</span>
-                Rol ve Yetki
-              </h3>
-              
-              <Select
-                label="Rol"
-                name="role"
-                value={formData.role}
-                onChange={handleChange}
-                options={USER_ROLES}
-                error={errors.role}
-                placeholder="Rolünüzü seçin"
-                required
-                icon="admin_panel_settings"
-              />
-
-              {needsExpertise && (
+            {/* Uzmanlık ve Organizasyon */}
+            {needsExpertise && (
+              <div className="space-y-4 pt-4 border-t border-slate-200 dark:border-slate-800">
+                <h3 className="text-sm font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wide flex items-center gap-2">
+                  <span className="material-symbols-outlined text-primary">work</span>
+                  Uzmanlık ve Organizasyon
+                </h3>
+                
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <Select
                     label="Uzmanlık Alanı"
@@ -312,7 +270,6 @@ export default function Register({ onRegisterSuccess, onSwitchToLogin }) {
                     onChange={handleChange}
                     options={EXPERTISE_AREAS}
                     error={errors.expertise_area}
-                    placeholder="Uzmanlık alanınızı seçin"
                     required
                     icon="medical_services"
                   />
@@ -329,8 +286,8 @@ export default function Register({ onRegisterSuccess, onSwitchToLogin }) {
                     icon="business"
                   />
                 </div>
-              )}
-            </div>
+              </div>
+            )}
 
             {/* Lokasyon */}
             <div className="space-y-4 pt-4 border-t border-slate-200 dark:border-slate-800">
@@ -350,7 +307,6 @@ export default function Register({ onRegisterSuccess, onSwitchToLogin }) {
                     return acc;
                   }, {})}
                   error={errors.city}
-                  placeholder="Şehir seçin"
                   required
                   icon="location_city"
                 />
@@ -373,7 +329,7 @@ export default function Register({ onRegisterSuccess, onSwitchToLogin }) {
             <div className="space-y-4 pt-4 border-t border-slate-200 dark:border-slate-800">
               <h3 className="text-sm font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wide flex items-center gap-2">
                 <span className="material-symbols-outlined text-primary">image</span>
-                Profil Fotoğrafı (Opsiyonel)
+                Profil Fotoğrafı
               </h3>
               
               <Input
@@ -394,31 +350,17 @@ export default function Register({ onRegisterSuccess, onSwitchToLogin }) {
             {/* Butonlar */}
             <div className="flex gap-4 pt-6">
               <Button
-                type="button"
-                variant="ghost"
-                onClick={onSwitchToLogin}
-                fullWidth
-              >
-                Geri Dön
-              </Button>
-              
-              <Button
                 type="submit"
                 variant="primary"
                 fullWidth
                 loading={loading}
-                icon="person_add"
+                icon="save"
               >
-                Kayıt Ol
+                Değişiklikleri Kaydet
               </Button>
             </div>
           </form>
         </div>
-
-        {/* Alt Bilgi */}
-        <p className="text-center text-xs text-slate-500 dark:text-slate-400 mt-6">
-          © 2026 AFAD - Afet ve Acil Durum Yönetimi Başkanlığı
-        </p>
       </div>
     </div>
   );
