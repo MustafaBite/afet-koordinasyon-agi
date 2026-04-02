@@ -78,3 +78,51 @@ class VehicleUpdate(BaseModel):
     water_count: int
     medical_count: int
     blanket_count: int
+
+
+
+# Authentication Schemas
+
+class UserRegister(BaseModel):
+    email: str
+    password: str
+    first_name: str
+    last_name: str
+    tc_identity_no: str
+    phone: str
+    role: str
+    expertise_area: str | None = None
+    organization: str | None = None
+    city: str
+    district: str
+    profile_photo_url: str | None = None
+
+
+class UserLogin(BaseModel):
+    email: str
+    password: str
+
+
+class UserResponse(BaseModel):
+    id: UUID
+    email: str
+    first_name: str
+    last_name: str
+    tc_identity_no: str
+    phone: str
+    role: str
+    expertise_area: str | None
+    organization: str | None
+    city: str
+    district: str
+    profile_photo_url: str | None
+    is_active: bool
+    created_at: datetime
+
+    model_config = {"from_attributes": True}
+
+
+class AuthResponse(BaseModel):
+    access_token: str
+    token_type: str
+    user: UserResponse

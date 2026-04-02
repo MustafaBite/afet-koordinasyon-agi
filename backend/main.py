@@ -30,7 +30,8 @@ app.add_middleware(
 
 # Router'lar varsa ekle
 try:
-    from routers import requests as requests_router, clusters as clusters_router
+    from routers import requests as requests_router, clusters as clusters_router, auth as auth_router
+    app.include_router(auth_router.router)
     app.include_router(requests_router.router)
     app.include_router(clusters_router.router)
 except ImportError:

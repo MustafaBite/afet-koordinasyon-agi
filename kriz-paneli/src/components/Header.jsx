@@ -1,4 +1,4 @@
-export default function Header() {
+export default function Header({ user, onLogout }) {
   return (
     <header className="h-20 bg-white dark:bg-slate-900/50 backdrop-blur-md border-b border-slate-200 dark:border-slate-800 flex items-center justify-between px-8 shrink-0">
       
@@ -26,7 +26,10 @@ export default function Header() {
             <span className="material-symbols-outlined">notifications</span>
             <span className="absolute top-2 right-2 size-2 bg-emergency-red rounded-full ring-2 ring-white dark:ring-slate-900"></span>
           </button>
-          <button className="flex items-center gap-2 px-4 py-2 rounded-lg bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 hover:bg-slate-200 dark:hover:bg-slate-700 font-semibold text-sm">
+          <button 
+            onClick={onLogout}
+            className="flex items-center gap-2 px-4 py-2 rounded-lg bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 hover:bg-slate-200 dark:hover:bg-slate-700 font-semibold text-sm"
+          >
             <span className="material-symbols-outlined text-lg">logout</span>
             <span>Çıkış Yap</span>
           </button>

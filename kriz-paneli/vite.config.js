@@ -6,6 +6,10 @@ export default defineConfig({
   
   server: {
     proxy: {
+      '/auth': {
+        target: 'http://localhost:8000',
+        changeOrigin: true,
+      },
       '/talepler': {
         target: 'http://localhost:8000',
         changeOrigin: true,
