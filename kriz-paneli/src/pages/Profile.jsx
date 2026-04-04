@@ -127,23 +127,7 @@ export default function Profile({ user, onUpdateSuccess }) {
     setSuccessMessage(null);
 
     try {
-      const token = authService.getToken();
-      const response = await fetch('/auth/me', {
-        method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`
-        },
-        body: JSON.stringify(formData)
-      });
-
-      if (!response.ok) {
-        const error = await response.json();
-        throw new Error(error.detail || 'Güncelleme başarısız');
-      }
-
-      const updatedUser = await response.json();
-      authService.saveUser(updatedUser);
+      const updatedUser = await authService.updateProfile(formData);
       setSuccessMessage('Profil başarıyla güncellendi!');
       
       if (onUpdateSuccess) {

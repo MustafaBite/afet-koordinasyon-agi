@@ -23,13 +23,27 @@ function App() {
 
   // Sayfa yüklendiğinde token kontrolü (Backend bağlantısı)
   useEffect(() => {
-    const token = authService.getToken();
-    const savedUser = authService.getUser();
-    
-    if (token && savedUser) {
-      setUser(savedUser);
-      setActiveTab('aktif'); // Giriş başarılıysa varsayılan olarak Dashboard'u aç
-    }
+    const checkAuth = async () => {
+      const token = authService.getToken();
+      const savedUser = authService.getUser();
+      
+      if (token && savedUser) {
+        try {
+          // Token'ın geçerliliğini kontrol et
+          const currentUser = await authService.getCurrentUser();
+          setUser(currentUser);
+          setActiveTab('aktif');
+        } catch (error) {
+          // Token geçersizse logout yap
+          console.error('Token doğrulama hatası:', error);
+          authService.logout();
+          setUser(null);
+          setAuthView('Login');
+        }
+      }
+    };
+
+    checkAuth();
   }, []);
 
   // --- YETKİLENDİRME FONKSİYONLARI ---
@@ -92,7 +106,8 @@ function App() {
         <Header 
           toggleSidebar={() => setIsSidebarOpen(!isSidebarOpen)} 
           user={user} 
-          onLogout={handleLogout} 
+          onLogout={handleLogout}
+          onProfileClick={() => setActiveTab('profile')}
         />
         
         {/* İÇERİK BÖLÜMÜ: Sol menüden hangi sekmeye tıklandıysa o ekran */}

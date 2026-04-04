@@ -1,68 +1,141 @@
-const API_BASE_URL = '/auth'; 
+// Authentication API servisleri
+
+const API_BASE_URL = '/auth'; // Vite proxy üzerinden backend'e gidecek
 
 export const authService = {
-  // SAHTE LOGİN (Backend'i atlar)
   async login(credentials) {
-    console.warn("DİKKAT: Şu an sahte (mock) login kullanılıyor!");
-    
-    return new Promise((resolve) => {
-      setTimeout(() => {
-        resolve({
-          access_token: "sahte_jwt_token_12345",
-          token_type: "bearer",
-          user: { 
-            id: "fake-uuid-123", 
-            email: credentials.email, 
-            first_name: "Test", 
-            role: "volunteer" 
-          }
-        });
-      }, 500); // Gerçekçi olması için yarım saniye gecikme ekledik
+    const response = await fetch(`${API_BASE_URL}/login`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(credentials)
     });
+    
+    if (!response.ok) {
+      const error = await response.json().catch(() => ({ detail: 'Giriş başarısız' }));
+      throw new Error(error.detail || 'Giriş başarısız');
+    }
+    
+    return response.json();
   },
 
-  // SAHTE KAYIT (Backend'i atlar)
   async register(userData) {
-    console.warn("DİKKAT: Şu an sahte (mock) register kullanılıyor!");
-    
-    return new Promise((resolve) => {
-      setTimeout(() => {
-        resolve({
-          access_token: "sahte_jwt_token_12345",
-          token_type: "bearer",
-          user: { 
-            id: "fake-uuid-123", 
-            email: userData.email, 
-            first_name: userData.first_name || "Yeni", 
-            role: "volunteer" 
-          }
-        });
-      }, 500);
+    const response = await fetch(`${API_BASE_URL}/register`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(userData)
     });
+    
+    if (!response.ok) {
+      const error = await response.json().catch(() => ({ detail: 'Kayıt başarısız' }));
+      throw new Error(error.detail || 'Kayıt başarısız');
+    }
+    
+    return response.json();
   },
 
-  async getMe() {
-    // ... (Bu kısım aynı kalabilir veya buraya da sahte dönüş ekleyebilirsin)
+  async getCurrentUser() {
     const token = this.getToken();
-    if (!token) throw new Error('Token bulunamadı');
-    return { id: "fake-uuid-123", email: "test@test.com", first_name: "Test" };
+    if (!token) {
+      throw new Error('Token bulunamadı');
+    }
+
+    const response = await fetch(`${API_BASE_URL}/me`, {
+      method: 'GET',
+      headers: {
+        'Authorization': `Bearer ${token}`,
+        'Content-Type': 'application/json'
+      }
+    });
+
+    if (!response.ok) {
+      if (response.status === 401) {
+        this.logout();
+        throw new Error('Oturum süresi doldu');
+      }
+      const error = await response.json().catch(() => ({ detail: 'Kullanıcı bilgisi alınamadı' }));
+      throw new Error(error.detail || 'Kullanıcı bilgisi alınamadı');
+    }
+
+    return response.json();
+  },
+
+  async updateProfile(userData) {
+    const token = this.getToken();
+    if (!token) {
+      throw new Error('Token bulunamadı');
+    }
+
+    const response = await fetch(`${API_BASE_URL}/me`, {
+      method: 'PUT',
+      headers: {
+        'Authorization': `Bearer ${token}`,
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify(userData)
+    });
+
+    if (!response.ok) {
+      if (response.status === 401) {
+        this.logout();
+        throw new Error('Oturum süresi doldu');
+      }
+      const error = await response.json().catch(() => ({ detail: 'Profil güncellenemedi' }));
+      throw new Error(error.detail || 'Profil güncellenemedi');
+    }
+
+    const updatedUser = await response.json();
+    this.saveUser(updatedUser);
+    return updatedUser;
+  },
+
+  // Token ile API çağrısı yapmak için yardımcı fonksiyon
+  async fetchWithAuth(url, options = {}) {
+    const token = this.getToken();
+    if (!token) {
+      throw new Error('Token bulunamadı');
+    }
+
+    const response = await fetch(url, {
+      ...options,
+      headers: {
+        ...options.headers,
+        'Authorization': `Bearer ${token}`,
+        'Content-Type': 'application/json'
+      }
+    });
+
+    if (!response.ok && response.status === 401) {
+      this.logout();
+      window.location.reload();
+      throw new Error('Oturum süresi doldu');
+    }
+
+    return response;
   },
 
   saveToken(token) {
     localStorage.setItem('access_token', token);
   },
+
   getToken() {
     return localStorage.getItem('access_token');
   },
+
   saveUser(user) {
     localStorage.setItem('user', JSON.stringify(user));
   },
+
   getUser() {
     const user = localStorage.getItem('user');
     return user ? JSON.parse(user) : null;
   },
+
   logout() {
     localStorage.removeItem('access_token');
     localStorage.removeItem('user');
+  },
+
+  isAuthenticated() {
+    return !!this.getToken();
   }
 };

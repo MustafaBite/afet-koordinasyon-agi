@@ -6,8 +6,8 @@ import Button from '../components/common/Button';
 
 export default function Login({ onLoginSuccess, onSwitchToRegister }) {
   const [formData, setFormData] = useState({
-    email: 'user@example.com',
-    password: 'SecurePass123!'
+    email: '',
+    password: ''
   });
   const [errors, setErrors] = useState({});
   const [loading, setLoading] = useState(false);
@@ -55,7 +55,8 @@ export default function Login({ onLoginSuccess, onSwitchToRegister }) {
       
       onLoginSuccess(response.user);
     } catch (error) {
-      setApiError(error.message);
+      console.error('Login error:', error);
+      setApiError(error.message || 'Giriş sırasında bir hata oluştu');
     } finally {
       setLoading(false);
     }
@@ -67,11 +68,28 @@ export default function Login({ onLoginSuccess, onSwitchToRegister }) {
         
         {/* Logo ve Başlık */}
         <div className="text-center mb-8">
-          <div className="afad-auth-logo inline-block mb-4">
-            <span className="afad-auth-text text-5xl text-afad-blue dark:text-white">AFAD</span>
-            <div className="afad-auth-flag"></div>
+          {/* RESQ LOGOSU */}
+          <div className="flex flex-col items-center justify-center select-none scale-[0.65] origin-center mb-4">
+            {/* Kalkan İkonu */}
+            <div className="relative w-16 h-[72px] -mb-3 z-10">
+              <div className="w-full h-full rounded-[20%_20%_50%_50%/10%_10%_40%_40%] bg-gradient-to-br from-slate-100 to-slate-300 dark:from-slate-200 dark:to-slate-400 border-[3px] border-slate-400 shadow-lg transform scale-y-105"></div>
+              <svg className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-10 h-auto" viewBox="0 0 100 60">
+                <path d="M5,30 h35 L45,15 L50,45 L55,15 L60,30 h35" stroke="#1e293b" strokeWidth="6" fill="none" strokeLinecap="round" strokeLinejoin="round" />
+              </svg>
+            </div>
+            {/* RESQ Metni */}
+            <div className="font-extrabold text-[55px] leading-none tracking-tighter flex items-baseline font-sans drop-shadow-sm">
+              <span className="text-slate-800 dark:text-slate-100">RES</span><span className="text-red-600">Q</span>
+            </div>
+            {/* Alt Çizgi */}
+            <div className="w-[120%] h-5 -mt-2 flex justify-center">
+              <svg className="w-full h-full drop-shadow-md" viewBox="0 0 250 20">
+                <path d="M0,10 h185 L190,5 L195,15 L200,5 L205,10 h45" stroke="#dc2626" strokeWidth="6" fill="none" strokeLinecap="round" strokeLinejoin="round" />
+              </svg>
+            </div>
           </div>
-          <h1 className="text-2xl font-bold mt-6 mb-2">Kriz Yönetim Sistemi</h1>
+          
+          <h1 className="text-2xl font-bold mb-2">Kriz Yönetim Sistemi</h1>
           <p className="text-slate-500 dark:text-slate-400 text-sm">
             Hesabınıza giriş yapın
           </p>
@@ -140,7 +158,7 @@ export default function Login({ onLoginSuccess, onSwitchToRegister }) {
 
         {/* Alt Bilgi */}
         <p className="text-center text-xs text-slate-500 dark:text-slate-400 mt-6">
-          © 2026 AFAD - Afet ve Acil Durum Yönetimi Başkanlığı
+          © 2026 RESQ - Afet ve Acil Durum Yönetimi Sistemi
         </p>
       </div>
     </div>

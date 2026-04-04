@@ -1,6 +1,6 @@
 import React from 'react';
 
-export default function Header({ toggleSidebar, user, onLogout }) {
+export default function Header({ toggleSidebar, user, onLogout, onProfileClick }) {
   return (
     <header className="h-20 bg-white dark:bg-slate-900/50 backdrop-blur-md border-b border-slate-200 dark:border-slate-800 flex items-center justify-between px-8 shrink-0">
       
@@ -74,21 +74,28 @@ export default function Header({ toggleSidebar, user, onLogout }) {
           </button>
 
           {/* Profil İsmi ve Ünvan (Dinamik hale getirildi) */}
-          <div className="hidden md:flex flex-col items-end">
+          <button 
+            onClick={onProfileClick}
+            className="hidden md:flex flex-col items-end hover:opacity-80 transition-opacity"
+          >
             <span className="text-sm font-bold text-slate-900 dark:text-white leading-tight">
-              {user && user.firstName ? `${user.firstName} ${user.lastName}` : "Zehra Dağaşan"}
+              {user ? `${user.first_name} ${user.last_name}` : "Kullanıcı"}
             </span>
             <span className="text-[10px] text-slate-500 dark:text-slate-400 font-bold uppercase tracking-wide">
-              {user && user.role ? user.role : "Kriz Merkezi Yöneticisi"}
+              {user?.role === 'admin' ? 'Yönetici' : 
+               user?.role === 'coordinator' ? 'Koordinatör' : 
+               user?.role === 'volunteer' ? 'Gönüllü' : 'Vatandaş'}
             </span>
-          </div>
+          </button>
 
           {/* Profil Resmi */}
-          <img 
-            src={user && user.avatarUrl ? user.avatarUrl : "https://ui-avatars.com/api/?name=Zehra+Dağaşan&background=2563eb&color=fff&bold=true"} 
-            alt="Profil" 
-            className="h-10 w-10 rounded-full border-2 border-slate-200 dark:border-slate-700 shadow-sm cursor-pointer hover:border-blue-500 transition-colors" 
-          />
+          <button onClick={onProfileClick}>
+            <img 
+              src={user?.profile_photo_url || `https://ui-avatars.com/api/?name=${user?.first_name}+${user?.last_name}&background=2563eb&color=fff&bold=true`} 
+              alt="Profil" 
+              className="h-10 w-10 rounded-full border-2 border-slate-200 dark:border-slate-700 shadow-sm cursor-pointer hover:border-blue-500 transition-colors" 
+            />
+          </button>
 
           {/* Çıkış Yap Butonu */}
           <button 

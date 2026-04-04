@@ -15,7 +15,6 @@ from math import sqrt
 from datetime import datetime, timezone
 
 
-
 # Veritabanı tablolarını oluştur
 models.Base.metadata.create_all(bind=engine)
 
@@ -31,14 +30,13 @@ app.add_middleware(
 
 # Router'lar varsa ekle
 try:
-    from routers import requests as requests_router, clusters as clusters_router, auth as auth_router
+    from routers import requests as requests_router, clusters as clusters_router, auth as auth_router, vehicles as vehicles_router
     app.include_router(auth_router.router)
-    app.include_router(requests_router.router)
+    app.include_router(requests_router.router, prefix="/api/ihbarlar")
     app.include_router(clusters_router.router)
-    
-   
-except ImportError:
-    pass
+    app.include_router(vehicles_router.router)
+except Exception as e: # Burayı değiştirdik
+    print(f"ROUTER HATASI: {e}") # Hatanın adını yazdıracak
 
 # Bağlı kullanıcıları yöneten class
 class ConnectionManager:
@@ -258,3 +256,20 @@ async def websocket_endpoint(websocket: WebSocket):
             await asyncio.sleep(1)  #  sadece açık tutar
     except WebSocketDisconnect:
         manager.disconnect(websocket)
+
+class SuruBaslatSchema(BaseModel):
+    sektor_id: str
+    aksiyon: str
+
+@app.post("/api/operasyon/suru-baslat")
+async def start_swarm_operation(data: SuruBaslatSchema):
+    # Zehra'nın otonom sürüş tetikleyicisi
+    print(f"OPERASYON: {data.sektor_id} bölgesinde {data.aksiyon} tetiklendi!")
+    
+    # WebSocket üzerinden tüm kriz paneline haber veriyoruz
+    await manager.broadcast({
+        "event": "SWARM_STARTED",
+        "sector": data.sektor_id,
+        "action": data.aksiyon
+    })
+    return {"status": "started", "detail": f"{data.sektor_id} için operasyon başladı."}
