@@ -6,8 +6,8 @@ import Button from '../components/common/Button';
 
 export default function Login({ onLoginSuccess, onSwitchToRegister }) {
   const [formData, setFormData] = useState({
-    email: '',
-    password: ''
+    email: 'user@example.com',
+    password: 'SecurePass123!'
   });
   const [errors, setErrors] = useState({});
   const [loading, setLoading] = useState(false);

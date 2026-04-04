@@ -1,10 +1,6 @@
-<<<<<<< HEAD
 import React from 'react';
 
-export default function Header({ toggleSidebar }) {
-=======
-export default function Header({ user, onLogout }) {
->>>>>>> 0edcaa8bdfe7ff7aa697a23cd063ae91e8a6009d
+export default function Header({ toggleSidebar, user, onLogout }) {
   return (
     <header className="h-20 bg-white dark:bg-slate-900/50 backdrop-blur-md border-b border-slate-200 dark:border-slate-800 flex items-center justify-between px-8 shrink-0">
       
@@ -76,29 +72,29 @@ export default function Header({ user, onLogout }) {
             <span className="material-symbols-outlined">notifications</span>
             <span className="absolute top-2 right-2 size-2 bg-red-500 rounded-full ring-2 ring-white dark:ring-slate-900 animate-pulse"></span>
           </button>
-<<<<<<< HEAD
 
-          {/* Profil İsmi ve Ünvan (Mobilde gizlenir, geniş ekranda görünür) */}
+          {/* Profil İsmi ve Ünvan (Dinamik hale getirildi) */}
           <div className="hidden md:flex flex-col items-end">
-            <span className="text-sm font-bold text-slate-900 dark:text-white leading-tight">Zehra Dağaşan</span>
-            <span className="text-[10px] text-slate-500 dark:text-slate-400 font-bold uppercase tracking-wide">Kriz Merkezi Yöneticisi</span>
+            <span className="text-sm font-bold text-slate-900 dark:text-white leading-tight">
+              {user && user.firstName ? `${user.firstName} ${user.lastName}` : "Zehra Dağaşan"}
+            </span>
+            <span className="text-[10px] text-slate-500 dark:text-slate-400 font-bold uppercase tracking-wide">
+              {user && user.role ? user.role : "Kriz Merkezi Yöneticisi"}
+            </span>
           </div>
 
           {/* Profil Resmi */}
           <img 
-            src="https://ui-avatars.com/api/?name=Zehra+Dağaşan&background=2563eb&color=fff&bold=true" 
+            src={user && user.avatarUrl ? user.avatarUrl : "https://ui-avatars.com/api/?name=Zehra+Dağaşan&background=2563eb&color=fff&bold=true"} 
             alt="Profil" 
             className="h-10 w-10 rounded-full border-2 border-slate-200 dark:border-slate-700 shadow-sm cursor-pointer hover:border-blue-500 transition-colors" 
           />
 
           {/* Çıkış Yap Butonu */}
-          <button className="flex items-center gap-2 px-3 py-2 rounded-lg bg-red-50 dark:bg-red-500/10 text-red-600 dark:text-red-400 hover:bg-red-100 dark:hover:bg-red-500/20 font-semibold text-sm transition-all ml-2">
-=======
           <button 
             onClick={onLogout}
-            className="flex items-center gap-2 px-4 py-2 rounded-lg bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 hover:bg-slate-200 dark:hover:bg-slate-700 font-semibold text-sm"
+            className="flex items-center gap-2 px-3 py-2 rounded-lg bg-red-50 dark:bg-red-500/10 text-red-600 dark:text-red-400 hover:bg-red-100 dark:hover:bg-red-500/20 font-semibold text-sm transition-all ml-2"
           >
->>>>>>> 0edcaa8bdfe7ff7aa697a23cd063ae91e8a6009d
             <span className="material-symbols-outlined text-lg">logout</span>
             <span className="hidden sm:block">Çıkış</span>
           </button>

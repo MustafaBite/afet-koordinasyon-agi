@@ -15,6 +15,7 @@ from math import sqrt
 from datetime import datetime, timezone
 
 
+
 # Veritabanı tablolarını oluştur
 models.Base.metadata.create_all(bind=engine)
 
@@ -34,6 +35,8 @@ try:
     app.include_router(auth_router.router)
     app.include_router(requests_router.router)
     app.include_router(clusters_router.router)
+    
+   
 except ImportError:
     pass
 
