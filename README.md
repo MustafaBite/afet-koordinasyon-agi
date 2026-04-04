@@ -1,4 +1,8 @@
 # Afet Koordinasyon Ağı
+![Python](https://img.shields.io/badge/python-3.11+-blue.svg)
+![Node](https://img.shields.io/badge/node-18+-green.svg)
+![PostgreSQL](https://img.shields.io/badge/PostgreSQL-14+-blue.svg)
+![License](https://img.shields.io/badge/license-MIT-green.svg)
 
 Gerçek zamanlı afet yönetimi ve koordinasyon sistemi. AI destekli araç önerisi, dinamik önceliklendirme ve kümeleme algoritmaları ile afet durumlarında hızlı ve etkili müdahale sağlar.
 
@@ -300,28 +304,6 @@ eta_minutes = (distance_km × 1.2) / vehicle_speed × 60
 - Afet düzeltme katsayısı: 1.2
 - Kritik durumlarda: +10% hız
 
-## 🚀 Production Deployment
-
-### Docker ile Deployment
-```bash
-# Backend
-docker build -t afet-backend ./backend
-docker run -p 8000:8000 afet-backend
-
-# Frontend
-docker build -t afet-frontend ./kriz-paneli
-docker run -p 3000:3000 afet-frontend
-```
-
-### Nginx Reverse Proxy
-```nginx
-location /api {
-    proxy_pass http://127.0.0.1:8000;
-    proxy_set_header Host $host;
-    proxy_set_header X-Real-IP $remote_addr;
-}
-```
-
 ## 🤝 Katkıda Bulunma
 
 1. Fork yapın
@@ -336,10 +318,11 @@ Bu proje MIT lisansı altında lisanslanmıştır.
 
 ## 👥 Ekip
 
-- Backend Geliştirici
-- Frontend Geliştirici
-- UI/UX Tasarımcı
-- Proje Yöneticisi
+- **Frontend Geliştirici & Proje Yöneticisi:** [@zehradagasann](https://github.com/zehradagasann)
+- **Backend Geliştiriciler:**
+  - [@BilalAbic](https://github.com/BilalAbic)
+  - [@Perihanceliko](https://github.com/Perihanceliko)
+  - [@MustafaBite](https://github.com/MustafaBite)
 
 ## 📞 İletişim
 
