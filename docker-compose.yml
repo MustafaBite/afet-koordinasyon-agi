@@ -1,0 +1,53 @@
+version: '3.8'
+
+services:
+  # PostgreSQL Veritabanı
+  db:
+    image: postgis/postgis:14-3.3
+    container_name: afet-db
+    environment:
+      POSTGRES_USER: afet_user
+      POSTGRES_PASSWORD: afet_pass
+      POSTGRES_DB: afet_koordinasyon
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U afet_user"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # Backend API
+  backend:
+    build: ./backend
+    container_name: afet-backend
+    environment:
+      DATABASE_URL: postgresql://afet_user:afet_pass@db:5432/afet_koordinasyon
+      SECRET_KEY: docker-secret-key-change-in-production
+    ports:
+      - "8000:8000"
+    depends_on:
+      db:
+        condition: service_healthy
+    volumes:
+      - ./backend:/app
+    command: uvicorn main:app --host 0.0.0.0 --port 8000 --reload
+
+  # Frontend
+  frontend:
+    build: ./kriz-paneli
+    container_name: afet-frontend
+    ports:
+      - "5173:5173"
+    depends_on:
+      - backend
+    volumes:
+      - ./kriz-paneli:/app
+      - /app/node_modules
+    environment:
+      - VITE_API_URL=http://localhost:8000
+
+volumes:
+  postgres_data:
