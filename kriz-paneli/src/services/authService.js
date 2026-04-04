@@ -11,7 +11,7 @@ export const authService = {
     });
     
     if (!response.ok) {
-      const error = await response.json();
+      const error = await response.json().catch(() => ({ detail: 'Giriş başarısız' }));
       throw new Error(error.detail || 'Giriş başarısız');
     }
     
@@ -26,11 +26,91 @@ export const authService = {
     });
     
     if (!response.ok) {
-      const error = await response.json();
+      const error = await response.json().catch(() => ({ detail: 'Kayıt başarısız' }));
       throw new Error(error.detail || 'Kayıt başarısız');
     }
     
     return response.json();
+  },
+
+  async getCurrentUser() {
+    const token = this.getToken();
+    if (!token) {
+      throw new Error('Token bulunamadı');
+    }
+
+    const response = await fetch(`${API_BASE_URL}/me`, {
+      method: 'GET',
+      headers: {
+        'Authorization': `Bearer ${token}`,
+        'Content-Type': 'application/json'
+      }
+    });
+
+    if (!response.ok) {
+      if (response.status === 401) {
+        this.logout();
+        throw new Error('Oturum süresi doldu');
+      }
+      const error = await response.json().catch(() => ({ detail: 'Kullanıcı bilgisi alınamadı' }));
+      throw new Error(error.detail || 'Kullanıcı bilgisi alınamadı');
+    }
+
+    return response.json();
+  },
+
+  async updateProfile(userData) {
+    const token = this.getToken();
+    if (!token) {
+      throw new Error('Token bulunamadı');
+    }
+
+    const response = await fetch(`${API_BASE_URL}/me`, {
+      method: 'PUT',
+      headers: {
+        'Authorization': `Bearer ${token}`,
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify(userData)
+    });
+
+    if (!response.ok) {
+      if (response.status === 401) {
+        this.logout();
+        throw new Error('Oturum süresi doldu');
+      }
+      const error = await response.json().catch(() => ({ detail: 'Profil güncellenemedi' }));
+      throw new Error(error.detail || 'Profil güncellenemedi');
+    }
+
+    const updatedUser = await response.json();
+    this.saveUser(updatedUser);
+    return updatedUser;
+  },
+
+  // Token ile API çağrısı yapmak için yardımcı fonksiyon
+  async fetchWithAuth(url, options = {}) {
+    const token = this.getToken();
+    if (!token) {
+      throw new Error('Token bulunamadı');
+    }
+
+    const response = await fetch(url, {
+      ...options,
+      headers: {
+        ...options.headers,
+        'Authorization': `Bearer ${token}`,
+        'Content-Type': 'application/json'
+      }
+    });
+
+    if (!response.ok && response.status === 401) {
+      this.logout();
+      window.location.reload();
+      throw new Error('Oturum süresi doldu');
+    }
+
+    return response;
   },
 
   saveToken(token) {
@@ -53,5 +133,9 @@ export const authService = {
   logout() {
     localStorage.removeItem('access_token');
     localStorage.removeItem('user');
+  },
+
+  isAuthenticated() {
+    return !!this.getToken();
   }
 };

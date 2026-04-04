@@ -30,12 +30,13 @@ app.add_middleware(
 
 # Router'lar varsa ekle
 try:
-    from routers import requests as requests_router, clusters as clusters_router, auth as auth_router
+    from routers import requests as requests_router, clusters as clusters_router, auth as auth_router, vehicles as vehicles_router
     app.include_router(auth_router.router)
     app.include_router(requests_router.router, prefix="/api/ihbarlar")
     app.include_router(clusters_router.router)
-except Exception as e: # Burayı değiştirdik
-    print(f"ROUTER HATASI: {e}") # Hatanın adını yazdıracak
+    app.include_router(vehicles_router.router)
+except Exception as e: 
+    print(f"ROUTER HATASI: {e}")
 
 # Bağlı kullanıcıları yöneten class
 class ConnectionManager:

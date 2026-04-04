@@ -1,7 +1,13 @@
-<<<<<<< HEAD
-// 1. ADIM: activeTab ve setActiveTab proplarını ekledik
-export default function Sidebar({ isOpen, activeTab, setActiveTab }) {
+import { USER_ROLES } from '../constants/formOptions'; // Rolleri çekmek için gereken import
+
+// 1. ADIM: activeTab, setActiveTab ve user proplarını alıyoruz
+export default function Sidebar({ isOpen, activeTab, setActiveTab, user }) {
   
+  // Gelen kullanıcı verilerini ayarla (Giriş yapılmamışsa veya yükleniyorsa varsayılan değerler)
+  const userName = user ? `${user.first_name} ${user.last_name}` : 'Ahmet Yılmaz';
+  const userRole = user && user.role && USER_ROLES ? USER_ROLES[user.role] : 'Saha Koordinatörü';
+  const userPhoto = user?.profile_photo_url || `https://ui-avatars.com/api/?name=${encodeURIComponent(userName)}&background=2563eb&color=fff&bold=true`;
+
   // Hangi sekmenin aktif olduğuna göre sınıf (CSS) döndüren fonksiyon
   const getTabClass = (tabName) => {
     const baseClass = "flex items-center gap-3 px-4 py-3 rounded-xl font-medium transition-all cursor-pointer";
@@ -48,38 +54,22 @@ export default function Sidebar({ isOpen, activeTab, setActiveTab }) {
         {/* Menü Linkleri */}
         <nav className="flex-1 px-4 py-6 space-y-2">
           
-          {/* AKTİF İHBARLAR BUTONU */}
-          <div 
-            className={getTabClass("aktif")} 
-            onClick={() => setActiveTab("aktif")}
-          >
+          <div className={getTabClass("aktif")} onClick={() => setActiveTab("aktif")}>
             <span className="material-symbols-outlined">warning</span>
             <span>Aktif İhbarlar</span>
           </div>
           
-          {/* KÜMELER BUTONU */}
-          <div 
-            className={getTabClass("kumeler")} 
-            onClick={() => setActiveTab("kumeler")}
-          >
+          <div className={getTabClass("kumeler")} onClick={() => setActiveTab("kumeler")}>
             <span className="material-symbols-outlined">hub</span>
             <span>Kümeler</span>
           </div>
 
-          {/* HARİTA GÖRÜNÜMÜ BUTONU */}
-          <div 
-            className={getTabClass("harita")} 
-            onClick={() => setActiveTab("harita")}
-          >
+          <div className={getTabClass("harita")} onClick={() => setActiveTab("harita")}>
             <span className="material-symbols-outlined">map</span>
             <span>Harita Görünümü</span>
           </div>
 
-          {/* EKİPLER BUTONU */}
-          <div 
-            className={getTabClass("ekipler")} 
-            onClick={() => setActiveTab("ekipler")}
-          >
+          <div className={getTabClass("ekipler")} onClick={() => setActiveTab("ekipler")}>
             <span className="material-symbols-outlined">groups</span>
             <span>Ekipler</span>
           </div>
@@ -107,85 +97,30 @@ export default function Sidebar({ isOpen, activeTab, setActiveTab }) {
 
         {/* Alt Profil Alanı */}
         <div className="p-4 mt-auto border-t border-slate-200 dark:border-slate-800">
-          <div className="flex items-center gap-3 px-4 py-3 rounded-xl text-slate-600 dark:text-slate-400 hover:bg-slate-200 dark:hover:bg-slate-800 font-medium transition-all cursor-pointer">
+          
+          {/* Ayarlar Butonuna tıklanınca "profile" sekmesini aktif ediyoruz */}
+          <div 
+            onClick={() => setActiveTab("profile")}
+            className={`flex items-center gap-3 px-4 py-3 rounded-xl font-medium transition-all cursor-pointer ${
+              activeTab === "profile"
+                ? "bg-slate-200 dark:bg-slate-800 text-slate-900 dark:text-white"
+                : "text-slate-600 dark:text-slate-400 hover:bg-slate-200 dark:hover:bg-slate-800"
+            }`}
+          >
             <span className="material-symbols-outlined">settings</span>
             <span>Ayarlar</span>
           </div>
+          
           <div className="mt-4 p-4 rounded-xl bg-slate-200 dark:bg-slate-800 flex items-center gap-3 border border-slate-300 dark:border-slate-700">
-            <div className="size-9 rounded-full bg-slate-400 overflow-hidden ring-2 ring-white dark:ring-slate-900">
-              <img alt="User" className="w-full h-full object-cover" src="https://ui-avatars.com/api/?name=Ahmet+Yilmaz&background=2563eb&color=fff&bold=true"/>
+            <div className="size-9 rounded-full bg-slate-400 overflow-hidden ring-2 ring-white dark:ring-slate-900 shrink-0">
+              {/* Resim dinamikleşti */}
+              <img alt="User" className="w-full h-full object-cover" src={userPhoto}/>
             </div>
             <div className="flex-1 overflow-hidden">
-              <p className="text-sm font-bold text-slate-900 dark:text-white truncate">Dr. Ahmet Yılmaz</p>
-              <p className="text-[11px] font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wide truncate">Saha Koordinatörü</p>
+              {/* İsim ve rol dinamikleşti */}
+              <p className="text-sm font-bold text-slate-900 dark:text-white truncate">{userName}</p>
+              <p className="text-[11px] font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wide truncate">{userRole}</p>
             </div>
-=======
-import { USER_ROLES } from '../constants/formOptions';
-
-export default function Sidebar({ user, currentView, onNavigate }) {
-  const userRole = user ? USER_ROLES[user.role] : 'Kullanıcı';
-  const userName = user ? `${user.first_name} ${user.last_name}` : 'Kullanıcı';
-  const userPhoto = user?.profile_photo_url || `https://ui-avatars.com/api/?name=${encodeURIComponent(userName)}&background=136dec&color=fff`;
-  
-  return (
-    <aside className="w-72 bg-slate-50 dark:bg-slate-900 border-r border-slate-200 dark:border-slate-800 flex flex-col shrink-0 h-screen">
-      <div className="p-6 flex items-center gap-4">
-        <div className="afad-logo-container">
-          <span className="afad-text text-3xl text-afad-blue dark:text-white">AFAD</span>
-          <div className="turk-flag-circle"></div>
-        </div>
-        <div className="ml-2">
-          <p className="text-xs text-slate-500 dark:text-slate-400 font-medium uppercase tracking-wider">Kriz Yönetimi</p>
-        </div>
-      </div>
-      
-      <nav className="flex-1 px-4 py-4 space-y-1">
-        <button
-          onClick={() => onNavigate('dashboard')}
-          className={`flex items-center gap-3 px-4 py-3 rounded-xl font-medium transition-all w-full text-left ${
-            currentView === 'dashboard'
-              ? 'bg-primary text-white'
-              : 'text-slate-600 dark:text-slate-400 hover:bg-slate-200 dark:hover:bg-slate-800'
-          }`}
-        >
-          <span className="material-symbols-outlined">warning</span>
-          <span>Aktif İhbarlar</span>
-        </button>
-        <a className="flex items-center gap-3 px-4 py-3 rounded-xl text-slate-600 dark:text-slate-400 hover:bg-slate-200 dark:hover:bg-slate-800 font-medium transition-all" href="#">
-          <span className="material-symbols-outlined">map</span>
-          <span>Harita Görünümü</span>
-        </a>
-        <a className="flex items-center gap-3 px-4 py-3 rounded-xl text-slate-600 dark:text-slate-400 hover:bg-slate-200 dark:hover:bg-slate-800 font-medium transition-all" href="#">
-          <span className="material-symbols-outlined">groups</span>
-          <span>Ekipler</span>
-        </a>
-        <a className="flex items-center gap-3 px-4 py-3 rounded-xl text-slate-600 dark:text-slate-400 hover:bg-slate-200 dark:hover:bg-slate-800 font-medium transition-all" href="#">
-          <span className="material-symbols-outlined">pending_actions</span>
-          <span>Doğrulanmamışlar</span>
-          <span className="ml-auto bg-emergency-red text-white text-[10px] px-2 py-0.5 rounded-full">12</span>
-        </a>
-      </nav>
-
-      <div className="p-4 mt-auto border-t border-slate-200 dark:border-slate-800">
-        <button
-          onClick={() => onNavigate('profile')}
-          className={`flex items-center gap-3 px-4 py-3 rounded-xl font-medium transition-all w-full text-left ${
-            currentView === 'profile'
-              ? 'bg-slate-200 dark:bg-slate-800'
-              : 'text-slate-600 dark:text-slate-400 hover:bg-slate-200 dark:hover:bg-slate-800'
-          }`}
-        >
-          <span className="material-symbols-outlined">settings</span>
-          <span>Profil Ayarları</span>
-        </button>
-        <div className="mt-4 p-4 rounded-xl bg-slate-200 dark:bg-slate-800 flex items-center gap-3">
-          <div className="size-8 rounded-full bg-slate-400 overflow-hidden">
-            <img alt={userName} className="w-full h-full object-cover" src={userPhoto} />
-          </div>
-          <div className="flex-1 overflow-hidden">
-            <p className="text-sm font-semibold truncate">{userName}</p>
-            <p className="text-xs text-slate-500 dark:text-slate-400 truncate">{userRole}</p>
->>>>>>> 0edcaa8bdfe7ff7aa697a23cd063ae91e8a6009d
           </div>
         </div>
       </div>

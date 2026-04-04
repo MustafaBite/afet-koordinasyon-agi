@@ -1,121 +1,125 @@
-<<<<<<< HEAD
-import { useState } from 'react'; 
-import './App.css';
-import Sidebar from './components/Sidebar';
-import Header from './components/Header';
-import Dashboard from './components/Dashboard'; 
-import Kumeler from './Kumeler'; 
-import HaritaGorunumu from './HaritaGorunumu';
-import Ekipler from './Ekipler';
-import Dogrulanmamisİhbarlar from "./Dogrulanmamisİhbarlar.jsx";
-
-function App() {
-  
-  const [isSidebarOpen, setIsSidebarOpen] = useState(true);
-  
-  const [activeTab, setActiveTab] = useState("aktif");
-
-=======
 import { useState, useEffect } from 'react';
 import './App.css';
 import Sidebar from './components/Sidebar';
 import Header from './components/Header';
 import Dashboard from './components/Dashboard';
+import Kumeler from './Kumeler';
+import HaritaGorunumu from './HaritaGorunumu';
+import Ekipler from './Ekipler';
+import Dogrulanmamisİhbarlar from "./Dogrulanmamisİhbarlar.jsx";
 import Login from './pages/Login';
 import Register from './pages/Register';
 import Profile from './pages/Profile';
 import { authService } from './services/authService';
 
 function App() {
-  const [currentView, setCurrentView] = useState('login'); // 'login', 'register', 'dashboard', 'profile'
+  // --- KULLANICI VE GİRİŞ DURUMU YÖNETİMİ ---
   const [user, setUser] = useState(null);
+  const [authView, setAuthView] = useState('Login'); // Sadece giriş yapılmadıysa 'login' veya 'register'
 
-  // Sayfa yüklendiğinde token kontrolü
+  // --- ARAYÜZ (MENÜ) DURUMU YÖNETİMİ (Senin Kodun) ---
+  const [isSidebarOpen, setIsSidebarOpen] = useState(true);
+  const [activeTab, setActiveTab] = useState("aktif");
+
+  // Sayfa yüklendiğinde token kontrolü (Backend bağlantısı)
   useEffect(() => {
-    const token = authService.getToken();
-    const savedUser = authService.getUser();
-    
-    if (token && savedUser) {
-      setUser(savedUser);
-      setCurrentView('dashboard');
-    }
+    const checkAuth = async () => {
+      const token = authService.getToken();
+      const savedUser = authService.getUser();
+      
+      if (token && savedUser) {
+        try {
+          // Token'ın geçerliliğini kontrol et
+          const currentUser = await authService.getCurrentUser();
+          setUser(currentUser);
+          setActiveTab('aktif');
+        } catch (error) {
+          // Token geçersizse logout yap
+          console.error('Token doğrulama hatası:', error);
+          authService.logout();
+          setUser(null);
+          setAuthView('Login');
+        }
+      }
+    };
+
+    checkAuth();
   }, []);
 
+  // --- YETKİLENDİRME FONKSİYONLARI ---
   const handleLoginSuccess = (userData) => {
     setUser(userData);
-    setCurrentView('dashboard');
+    setActiveTab('aktif');
   };
 
   const handleRegisterSuccess = (userData) => {
     setUser(userData);
-    setCurrentView('dashboard');
+    setActiveTab('aktif');
   };
 
   const handleLogout = () => {
     authService.logout();
     setUser(null);
-    setCurrentView('login');
+    setAuthView('Login');
   };
 
   const handleProfileUpdate = (updatedUser) => {
     setUser(updatedUser);
   };
 
-  // Login sayfası
-  if (currentView === 'login') {
-    return (
-      <Login
-        onLoginSuccess={handleLoginSuccess}
-        onSwitchToRegister={() => setCurrentView('register')}
-      />
-    );
+  // --- KULLANICI GİRİŞ YAPMAMIŞSA (Giriş / Kayıt Ekranları) ---
+  if (!user) {
+    if (authView === 'Login') {
+      return (
+        <Login
+          onLoginSuccess={handleLoginSuccess}
+          onSwitchToRegister={() => setAuthView('Register')}
+        />
+      );
+    }
+    if (authView === 'Register') {
+      return (
+        <Register
+          onRegisterSuccess={handleRegisterSuccess}
+          onSwitchToLogin={() => setAuthView('Login')}
+        />
+      );
+    }
   }
 
-  // Register sayfası
-  if (currentView === 'register') {
-    return (
-      <Register
-        onRegisterSuccess={handleRegisterSuccess}
-        onSwitchToLogin={() => setCurrentView('login')}
-      />
-    );
-  }
-
-  // Dashboard veya Profile (giriş yapılmışsa)
->>>>>>> 0edcaa8bdfe7ff7aa697a23cd063ae91e8a6009d
+  // --- KULLANICI GİRİŞ YAPMIŞSA (Ana Panel Arayüzü) ---
   return (
     <div className="flex h-screen overflow-hidden">
-      <Sidebar user={user} currentView={currentView} onNavigate={setCurrentView} />
       
-<<<<<<< HEAD
-      {/* SOL MENÜ: activeTab ve setActiveTab proplarını gönderiyoruz ki butonlar çalışsın */}
+      {/* SOL MENÜ: Senin propların + kimlik bilgisi */}
       <Sidebar 
         isOpen={isSidebarOpen} 
         activeTab={activeTab} 
         setActiveTab={setActiveTab} 
-      /> 
-
+        user={user}
+      />
+      
       {/* SAĞ TARAF: Ana İçerik Alanı */}
-=======
->>>>>>> 0edcaa8bdfe7ff7aa697a23cd063ae91e8a6009d
       <main className="flex-1 flex flex-col overflow-hidden bg-background-light dark:bg-background-dark text-slate-900 dark:text-slate-100">
-        <Header user={user} onLogout={handleLogout} />
         
-<<<<<<< HEAD
-        {/* Üst Çubuk: Her zaman sayfanın en üstünde sabit kalır */}
-        <Header toggleSidebar={() => setIsSidebarOpen(!isSidebarOpen)} /> 
+        {/* Üst Çubuk: Sidebar'ı aç/kapat, profili göster ve çıkış yap */}
+        <Header 
+          toggleSidebar={() => setIsSidebarOpen(!isSidebarOpen)} 
+          user={user} 
+          onLogout={handleLogout}
+          onProfileClick={() => setActiveTab('profile')}
+        />
         
-        {/* İÇERİK BÖLÜMÜ: Sol menüden hangi sekmeye tıklandıysa sadece o bileşeni ekrana basıyoruz */}
+        {/* İÇERİK BÖLÜMÜ: Sol menüden hangi sekmeye tıklandıysa o ekran */}
         {activeTab === "aktif" && <Dashboard />}
         {activeTab === "kumeler" && <Kumeler />}
         {activeTab === "harita" && <HaritaGorunumu />}
-        {activeTab==="ekipler"&&<Ekipler/>}
-       {activeTab === 'dogrulanmamislar' && <Dogrulanmamisİhbarlar />}
-
-=======
-        {currentView === 'dashboard' && <Dashboard />}
-        {currentView === 'profile' && <Profile user={user} onUpdateSuccess={handleProfileUpdate} />}
->>>>>>> 0edcaa8bdfe7ff7aa697a23cd063ae91e8a6009d
+        {activeTab === "ekipler" && <Ekipler />}
+        {activeTab === 'dogrulanmamislar' && <Dogrulanmamisİhbarlar />}
+        
+        {/* Profil sayfası eklemesi (Üstten profile tıklandığında menüden tetiklenebilir) */}
+        {activeTab === 'profile' && <Profile user={user} onUpdateSuccess={handleProfileUpdate} />}
+        
       </main>
     </div>
   );

@@ -1,11 +1,6 @@
 import 'leaflet/dist/leaflet.css';
-<<<<<<< HEAD
 import { useState, useEffect, useRef } from 'react';
-import { MapContainer, TileLayer, Marker, Popup } from 'react-leaflet';
-=======
-import { useState, useEffect } from 'react';
 import { MapContainer, TileLayer, Marker, Popup, useMap } from 'react-leaflet';
->>>>>>> 0edcaa8bdfe7ff7aa697a23cd063ae91e8a6009d
 import L from 'leaflet';
 
 const kirmiziPin = new L.Icon({
@@ -17,15 +12,40 @@ const kirmiziPin = new L.Icon({
   shadowSize: [41, 41]
 });
 
-<<<<<<< HEAD
+// Harita uçuş kontrolü için iç bileşen (Diğer taraftan gelen özellik)
+function MapController({ flyTo }) {
+  const map = useMap();
+  useEffect(() => {
+    if (flyTo) map.flyTo(flyTo, 13, { duration: 1.5 });
+  }, [flyTo, map]);
+  return null;
+}
+
+const NEED_TYPE_LABELS = {
+  arama_kurtarma: 'Arama Kurtarma',
+  medikal: 'Medikal',
+  yangin: 'Yangın',
+  enkaz: 'Enkaz',
+  su: 'Su',
+  barinma: 'Barınma',
+  gida: 'Gıda',
+  is_makinesi: 'İş Makinesi',
+  ulasim: 'Ulaşım',
+};
+
 export default function Dashboard() {
   const mapRef = useRef(null);
   
+  // --- STATE BÖLÜMÜ ---
+  const [flyTo, setFlyTo] = useState(null);
   const [ihbarlar, setIhbarlar] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+  
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [secilenGorev, setSecilenGorev] = useState(null);
 
-  // MOCK VERİ
+  // MOCK VERİ (Senin eklediğin)
   const [clusters, setClusters] = useState([
     {
       "cluster_id": "fake-uuid-1",
@@ -52,52 +72,11 @@ export default function Dashboard() {
     { id: 3, isim: "Ambulans (Acil)", mesafe: "1.5 km" }
   ];
 
-  useEffect(() => {
-    const canliVerileriGetir = async () => {
-      try {
-        const responseIhbar = await fetch('http://127.0.0.1:8000/talepler/oncelikli');
-        if (responseIhbar.ok) {
-           const data = await responseIhbar.json();
-           setIhbarlar(data);
-        }
-      } catch (error) {
-        console.error("Veri çekilemedi:", error);
-      }
-    };
-    
-    canliVerileriGetir();
-=======
-// Harita uçuş kontrolü için iç bileşen
-function MapController({ flyTo }) {
-  const map = useMap();
-  useEffect(() => {
-    if (flyTo) map.flyTo(flyTo, 13, { duration: 1.5 });
-  }, [flyTo, map]);
-  return null;
-}
-
-const NEED_TYPE_LABELS = {
-  arama_kurtarma: 'Arama Kurtarma',
-  medikal: 'Medikal',
-  yangin: 'Yangın',
-  enkaz: 'Enkaz',
-  su: 'Su',
-  barinma: 'Barınma',
-  gida: 'Gıda',
-  is_makinesi: 'İş Makinesi',
-  ulasim: 'Ulaşım',
-};
-
-export default function Dashboard() {
-  const [flyTo, setFlyTo] = useState(null);
-  const [ihbarlar, setIhbarlar] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
-
+  // --- API VERİ ÇEKME (Birleştirilmiş Mantık) ---
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const response = await fetch('/requests/prioritized');
+        const response = await fetch('http://127.0.0.1:8000/talepler/oncelikli');
         if (!response.ok) throw new Error(`HTTP ${response.status}`);
         const data = await response.json();
         setIhbarlar(data);
@@ -107,15 +86,15 @@ export default function Dashboard() {
         setLoading(false);
       }
     };
+    
     fetchData();
-    const interval = setInterval(fetchData, 3000);
+    const interval = setInterval(fetchData, 3000); // 3 saniyede bir canlı günceller
     return () => clearInterval(interval);
->>>>>>> 0edcaa8bdfe7ff7aa697a23cd063ae91e8a6009d
   }, []);
 
   const konumaGit = (lat, lng) => setFlyTo([lat, lng]);
 
-<<<<<<< HEAD
+  // --- HARİTA YENİDEN BOYUTLANDIRMA (Senin Kodun) ---
   useEffect(() => {
     const haritayiGuncelle = () => {
       if (mapRef.current) {
@@ -136,22 +115,20 @@ export default function Dashboard() {
     };
   }, []);
 
+  // Uygulama çökmesin diye eklenen örnek atama fonksiyonu
+  const aracıAta = (arac) => {
+    alert(`${arac.isim} başarıyla görevlendirildi!`);
+    setIsModalOpen(false);
+  };
+
+  // --- HESAPLANAN VERİLER ---
+  const verified = ihbarlar.filter(i => i.is_verified).length;
   const normalIhbarlar = ihbarlar.filter(i => i.dynamic_priority_score < 80);
 
   return (
     <div className="flex-1 overflow-y-auto p-8 space-y-8 relative bg-zinc-900">
       
-      {/* İstatistik Kartı */}
-=======
-  const verified = ihbarlar.filter(i => i.is_verified).length;
-  const acilGorevler = ihbarlar.filter(i => i.dynamic_priority_score >= 80);
-  const normalIhbarlar = ihbarlar.filter(i => i.dynamic_priority_score < 80);
-
-  return (
-    <div className="flex-1 overflow-y-auto p-8 space-y-8">
-
       {/* İstatistik Kartları */}
->>>>>>> 0edcaa8bdfe7ff7aa697a23cd063ae91e8a6009d
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
         <div className="bg-white dark:bg-slate-900 p-6 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-800">
           <p className="text-slate-500 dark:text-slate-400 font-medium">Aktif İhbarlar</p>
@@ -173,57 +150,20 @@ export default function Dashboard() {
         </div>
       </div>
 
-<<<<<<< HEAD
-      {/* --- ANA YERLEŞİM DEĞİŞİKLİĞİ BURADA --- */}
-      <div className="grid grid-cols-1 xl:grid-cols-3 gap-8">
-        
-        {/* SOL TARAF: LİSTELER (Artık 2 Sütun Genişliğinde) */}
-        <div className="xl:col-span-2 space-y-8">
-          
-          {/* OTONOM GÖREV PAKETLERİ ALANI */}
-          <div className="space-y-4">
-=======
       {error && (
         <div className="bg-red-500/10 border border-red-500/30 text-red-400 px-4 py-3 rounded-xl text-sm">
           Backend bağlantı hatası: {error}
         </div>
       )}
 
+      {/* --- ANA YERLEŞİM (Senin Tasarımın) --- */}
       <div className="grid grid-cols-1 xl:grid-cols-3 gap-8">
-
-        {/* Harita */}
-        <div className="xl:col-span-2 space-y-4">
-          <h3 className="text-lg font-bold">Harita Canlı İzleme</h3>
-          <div className="relative h-[450px] w-full rounded-2xl overflow-hidden shadow-inner">
-            <MapContainer
-              center={[39.0, 35.0]}
-              zoom={6}
-              style={{ height: '100%', width: '100%' }}
-            >
-              <MapController flyTo={flyTo} />
-              <TileLayer
-                url="https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png"
-                attribution='&copy; <a href="https://carto.com/">CARTO</a>'
-              />
-              {ihbarlar.map((ihbar) => (
-                <Marker key={ihbar.id} position={[ihbar.latitude, ihbar.longitude]} icon={kirmiziPin}>
-                  <Popup>
-                    <b>Tür:</b> {NEED_TYPE_LABELS[ihbar.need_type] || ihbar.need_type}<br />
-                    <b>Aciliyet:</b> {ihbar.dynamic_priority_score}<br />
-                    <b>Doğrulandı:</b> {ihbar.is_verified ? 'Evet' : 'Hayır'}
-                  </Popup>
-                </Marker>
-              ))}
-            </MapContainer>
-          </div>
-        </div>
-
-        {/* Sağ Panel */}
-        <div className="space-y-6">
-
-          {/* Acil Görevler */}
-          <div className="space-y-3">
->>>>>>> 0edcaa8bdfe7ff7aa697a23cd063ae91e8a6009d
+        
+        {/* SOL TARAF: LİSTELER */}
+        <div className="xl:col-span-2 space-y-8">
+          
+          {/* OTONOM GÖREV PAKETLERİ ALANI */}
+          <div className="space-y-4">
             <h3 className="text-lg font-bold text-red-600 flex items-center gap-2">
               <span className="relative flex h-3 w-3">
                 <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>
@@ -231,7 +171,6 @@ export default function Dashboard() {
               </span>
               Otonom Görev Paketleri
             </h3>
-<<<<<<< HEAD
             
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4 max-h-[600px] overflow-y-auto pr-2">
              {clusters.map((cluster) => (
@@ -241,7 +180,7 @@ export default function Dashboard() {
                   className={`border-l-[6px] p-4 rounded-r-xl shadow-md cursor-pointer transition-all duration-500 ease-in-out transform hover:-translate-y-1 flex flex-col justify-between ${
                     cluster.status === 'yolda' 
                       ? 'bg-amber-50 dark:bg-amber-900/20 border-amber-500' 
-                      : 'bg-red-50 dark:bg-red-900/20 border-red-600'     
+                      : 'bg-red-50 dark:bg-red-900/20 border-red-600'    
                   }`}
                 >
                   <div>
@@ -283,52 +222,11 @@ export default function Dashboard() {
                   >
                     {cluster.status === 'yolda' ? '✔️ YÖNLENDİRİLDİ' : '🚐 EKİP YÖNLENDİR'}
                   </button>
-=======
-            <div className="grid gap-3">
-              {acilGorevler.slice(0, 3).map((ihbar) => (
-                <div
-                  key={ihbar.id}
-                  onClick={() => konumaGit(ihbar.latitude, ihbar.longitude)}
-                  className="bg-red-50 dark:bg-red-900/20 border-l-4 border-red-600 p-4 rounded-r-xl shadow-md cursor-pointer hover:scale-[1.02] transition-transform"
-                >
-                  <h4 className="font-black text-red-800 dark:text-red-400 uppercase text-xs">
-                    🚨 {(NEED_TYPE_LABELS[ihbar.need_type] || ihbar.need_type).toUpperCase()}
-                  </h4>
-                  <p className="text-[11px] text-red-700 dark:text-red-300 mt-1">
-                    📍 {ihbar.latitude.toFixed(3)}, {ihbar.longitude.toFixed(3)} — Puan: {ihbar.dynamic_priority_score}
-                  </p>
-                </div>
-              ))}
-              {acilGorevler.length === 0 && !loading && (
-                <p className="text-sm text-slate-400">Acil görev yok.</p>
-              )}
-            </div>
-          </div>
-
-          {/* Normal İhbarlar */}
-          <div className="space-y-3">
-            <h3 className="text-sm font-bold text-slate-500 dark:text-slate-400">Diğer İhbarlar</h3>
-            <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 overflow-y-auto max-h-[280px] divide-y divide-slate-100 dark:divide-slate-800">
-              {loading && <div className="p-4 text-center text-slate-400 text-sm">Yükleniyor...</div>}
-              {normalIhbarlar.slice(0, 50).map((ihbar) => (
-                <div
-                  key={ihbar.id}
-                  onClick={() => konumaGit(ihbar.latitude, ihbar.longitude)}
-                  className="p-3 hover:bg-slate-50 dark:hover:bg-slate-800/50 cursor-pointer flex justify-between items-center"
-                >
-                  <span className="text-xs text-slate-600 dark:text-slate-400">
-                    📍 {NEED_TYPE_LABELS[ihbar.need_type] || ihbar.need_type}
-                  </span>
-                  <span className={`text-[10px] px-2 py-0.5 rounded font-bold ${ihbar.is_verified ? 'bg-green-500/10 text-green-500' : 'bg-slate-200 dark:bg-slate-700 text-slate-500'}`}>
-                    {ihbar.is_verified ? '✓ Doğrulandı' : 'Şüpheli'}
-                  </span>
->>>>>>> 0edcaa8bdfe7ff7aa697a23cd063ae91e8a6009d
                 </div>
               ))}
             </div>
           </div>
 
-<<<<<<< HEAD
           {/* DOĞRULANMAMIŞ İHBARLAR */}
           <div className="space-y-4 opacity-75">
             <h3 className="text-sm font-bold italic text-slate-900 dark:text-white">Doğrulanmamış İhbarlar</h3>
@@ -338,7 +236,7 @@ export default function Dashboard() {
               ) : (
                 normalIhbarlar.map((ihbar) => (
                   <div key={ihbar.id} onClick={() => konumaGit(ihbar.latitude, ihbar.longitude)} className="p-3 hover:bg-slate-50 dark:hover:bg-slate-800/50 cursor-pointer flex justify-between items-center">
-                    <span className="text-xs text-slate-600 dark:text-slate-400">📍 {ihbar.need_type}</span>
+                    <span className="text-xs text-slate-600 dark:text-slate-400">📍 {NEED_TYPE_LABELS[ihbar.need_type] || ihbar.need_type}</span>
                     <span className="text-[10px] bg-slate-200 dark:bg-slate-700 px-2 py-0.5 rounded text-slate-900 dark:text-white">Şüpheli</span>
                   </div>
                 ))
@@ -348,7 +246,7 @@ export default function Dashboard() {
 
         </div> 
 
-        {/* SAĞ TARAF: HARİTA ALANI (Artık 1 Sütun Genişliğinde - Taktiksel Görünüm) */}
+        {/* SAĞ TARAF: HARİTA ALANI (Taktiksel Görünüm) */}
         <div className="xl:col-span-1 space-y-4">
           <div className="flex items-center justify-between">
              <h3 className="text-lg font-bold text-slate-900 dark:text-white flex items-center gap-2">
@@ -357,19 +255,25 @@ export default function Dashboard() {
              </h3>
              <span className="text-[10px] px-2 py-1 bg-green-500/20 text-green-400 rounded-full font-bold border border-green-500/30">Canlı</span>
           </div>
-          {/* Haritanın yüksekliğini ekranı dolduracak şekilde (h-[600px]) artırdım */}
+          
           <div className="relative h-[600px] w-full rounded-2xl overflow-hidden shadow-xl border border-slate-700/50">
             <MapContainer ref={mapRef} center={[40.990, 29.020]} zoom={12} style={{ height: '100%', width: '100%' }} zoomControl={false}>
-              {/* Daha karanlık, taktiksel bir harita teması ekledik */}
+              
+              {/* Haritanın tıklanan yere uçmasını sağlayan bileşeni ekledik */}
+              <MapController flyTo={flyTo} /> 
+              
               <TileLayer url="https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png" />
               {ihbarlar.map((ihbar) => (
                 <Marker key={ihbar.id} position={[ihbar.latitude, ihbar.longitude]} icon={kirmiziPin}>
-                  <Popup><b>Tür:</b> {ihbar.need_type} <br/><b>Puan:</b> {ihbar.dynamic_priority_score}</Popup>
+                  <Popup>
+                    <b>Tür:</b> {NEED_TYPE_LABELS[ihbar.need_type] || ihbar.need_type} <br/>
+                    <b>Puan:</b> {ihbar.dynamic_priority_score}
+                  </Popup>
                 </Marker>
               ))}
             </MapContainer>
             
-            {/* Harita üzerine gelen saydam bilgi katmanı (Overlay) */}
+            {/* Harita Overlay */}
             <div className="absolute bottom-4 left-4 right-4 bg-slate-900/80 backdrop-blur-md p-3 rounded-xl border border-slate-700 z-[400] text-xs">
                 <div className="flex justify-between items-center text-slate-300">
                     <span>Toplam İşaret: <strong className="text-white">{ihbarlar.length}</strong></span>
@@ -418,10 +322,3 @@ export default function Dashboard() {
     </div>
   );
 }
-=======
-        </div>
-      </div>
-    </div>
-  );
-}
->>>>>>> 0edcaa8bdfe7ff7aa697a23cd063ae91e8a6009d
