@@ -4,7 +4,20 @@ FastAPI + PostgreSQL tabanlı afet yönetim sistemi backend'i. AI destekli araç
 
 ## 🚀 Hızlı Başlangıç
 
-### 1. Bağımlılıkları Yükle
+### Docker ile Kurulum (Önerilen)
+
+```bash
+# Ana dizinden docker-compose ile başlat
+cd ..
+docker-compose up -d
+
+# Sadece backend'i test et
+docker-compose logs -f backend
+```
+
+### Manuel Kurulum
+
+#### 1. Bağımlılıkları Yükle
 ```bash
 pip install -r requirements.txt
 ```
@@ -294,16 +307,6 @@ Detaylı şema için: [DATABASE_SCHEMA.md](DATABASE_SCHEMA.md)
 ### Şifre Hashleme
 - Bcrypt algoritması
 - Salt rounds: 12
-
-### CORS
-```python
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=["*"],  # Production'da değiştir
-    allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
-)
 ```
 
 ## 📊 Mock Veri Oluşturma
@@ -320,6 +323,19 @@ python mock_data_generator.py --count 100
 ```
 
 ## 🚀 Production Deployment
+
+### Docker
+
+```bash
+# Build
+docker build -t afet-backend .
+
+# Run
+docker run -d -p 8000:8000 \
+  -e DATABASE_URL=postgresql://user:pass@host:5432/db \
+  -e SECRET_KEY=your-secret-key \
+  afet-backend
+```
 
 ### Gunicorn ile Çalıştırma
 ```bash

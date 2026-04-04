@@ -4,7 +4,33 @@ Gerçek zamanlı afet yönetimi ve koordinasyon sistemi. AI destekli araç öner
 
 ## 🚀 Hızlı Başlangıç
 
-### Gereksinimler
+### Docker ile Kurulum (Önerilen - En Kolay)
+
+Tüm sistemi tek komutla başlatın:
+
+```bash
+# Tüm servisleri başlat (PostgreSQL + Backend + Frontend)
+docker-compose up -d
+
+# Logları izle
+docker-compose logs -f
+
+# Durdur
+docker-compose down
+
+# Veritabanı ile birlikte temizle
+docker-compose down -v
+```
+
+Servisler:
+- Frontend: http://localhost:5173
+- Backend API: http://localhost:8000
+- API Docs: http://localhost:8000/docs
+- PostgreSQL: localhost:5432
+
+### Manuel Kurulum
+
+#### Gereksinimler
 - Python 3.11+
 - Node.js 18+
 - PostgreSQL 14+
@@ -15,9 +41,9 @@ Gerçek zamanlı afet yönetimi ve koordinasyon sistemi. AI destekli araç öner
 cd backend
 pip install -r requirements.txt
 
-# .env dosyası oluştur
-echo "DATABASE_URL=postgresql://user:password@localhost/afet_koordinasyon" > .env
-echo "SECRET_KEY=your-secret-key-change-in-production" >> .env
+# .env dosyası oluştur (.env.example'dan kopyala)
+cp ../.env.example ../.env
+# Ardından .env dosyasını düzenle
 
 # Migration'ları çalıştır
 psql -U user -d afet_koordinasyon -f migrations/add_base_speed_to_vehicles.sql
@@ -119,6 +145,7 @@ python tests/test_integration.py
 - [Backend README](backend/README.md) - Backend detaylı kurulum ve kullanım
 - [API Dokümantasyonu](backend/docs/API.md) - Tüm endpoint'ler ve örnekler
 - [Veritabanı Şeması](backend/docs/DATABASE_SCHEMA.md) - ER diagram ve ilişkiler
+- [Docker Kurulum Rehberi](DOCKER_SETUP.md) - Docker ile hızlı başlangıç
 
 ## 🎯 API Kullanım Örnekleri
 
@@ -302,15 +329,22 @@ eta_minutes = (distance_km × 1.2) / vehicle_speed × 60
 
 ## 🚀 Production Deployment
 
-### Docker ile Deployment
-```bash
-# Backend
-docker build -t afet-backend ./backend
-docker run -p 8000:8000 afet-backend
+### Docker ile Production
 
-# Frontend
+```bash
+# Production build
+docker-compose -f docker-compose.prod.yml up -d
+
+# Veya manuel build
+docker build -t afet-backend ./backend
 docker build -t afet-frontend ./kriz-paneli
-docker run -p 3000:3000 afet-frontend
+
+docker run -d -p 8000:8000 \
+  -e DATABASE_URL=postgresql://user:pass@host/db \
+  -e SECRET_KEY=your-secret-key \
+  afet-backend
+
+docker run -d -p 3000:3000 afet-frontend
 ```
 
 ### Nginx Reverse Proxy
