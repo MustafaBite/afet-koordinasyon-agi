@@ -35,8 +35,8 @@ try:
     app.include_router(requests_router.router, prefix="/api/ihbarlar")
     app.include_router(clusters_router.router)
     app.include_router(vehicles_router.router)
-except Exception as e: # Burayı değiştirdik
-    print(f"ROUTER HATASI: {e}") # Hatanın adını yazdıracak
+except Exception as e: 
+    print(f"ROUTER HATASI: {e}")
 
 # Bağlı kullanıcıları yöneten class
 class ConnectionManager:

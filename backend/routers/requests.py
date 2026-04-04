@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy.orm import Session
 from typing import List
 from uuid import UUID
@@ -8,8 +8,8 @@ import schemas
 from database import SessionLocal
 from priority_engine import calculate_dynamic_priority
 
-router = APIRouter(prefix="/requests", tags=["requests"])
-
+#router = APIRouter(prefix="/requests", tags=["requests"]) // bu silinicek 
+router = APIRouter(tags=["requests"])
 
 def get_db():
     db = SessionLocal()
@@ -59,3 +59,53 @@ def update_status(request_id: UUID, body: schemas.StatusUpdate, db: Session = De
     db.commit()
     db.refresh(req)
     return req
+# 1. DOĞRULANMAMIŞ İHBARLARI LİSTELE (Filtreli)
+@router.get("/dogrulanmamis")
+def get_dogrulanmamis_ihbarlar(
+    oncelik: str = Query(None), # Zehra'nın ?oncelik=yuksek filtresi
+    db: Session = Depends(get_db)
+):
+    # Veritabanında is_verified=False olanları bul
+    query = db.query(models.DisasterRequest).filter(models.DisasterRequest.is_verified == False)
+    
+    if oncelik:
+        # Zehra 'yuksek' veya 'dusuk' gönderirse need_type üzerinden süzüyoruz
+        query = query.filter(models.DisasterRequest.need_type == oncelik)
+    
+    return query.all()
+
+# 2. DOĞRULA BUTONU (POST)
+@router.post("/{request_id}/dogrula")
+def verify_request(request_id: UUID, db: Session = Depends(get_db)):
+    req = db.query(models.DisasterRequest).filter(models.DisasterRequest.id == request_id).first()
+    if not req:
+        raise HTTPException(status_code=404, detail="İhbar bulunamadı")
+    
+    req.is_verified = True # Artık doğrulandı!
+    db.commit()
+    return {"status": "success", "message": "İhbar doğrulandı."}
+
+# 3. REDDET BUTONU (POST)
+@router.post("/{request_id}/reddet")
+def reject_request(request_id: UUID, db: Session = Depends(get_db)):
+    req = db.query(models.DisasterRequest).filter(models.DisasterRequest.id == request_id).first()
+    if not req:
+        raise HTTPException(status_code=404, detail="İhbar bulunamadı")
+    
+    db.delete(req) # Reddedilen ihbarı siliyoruz
+    db.commit()
+    return {"status": "success", "message": "İhbar silindi."}
+
+# Toplam, doğrulanan ve bekleyen ihbar sayılarını hesaplayarak arayüze gönderir.
+@router.get("/istatistikler")
+def get_stats(db: Session = Depends(get_db)):
+    total = db.query(models.DisasterRequest).count()
+    verified = db.query(models.DisasterRequest).filter(models.DisasterRequest.is_verified == True).count()
+    pending = total - verified
+    
+    return {
+        "toplam_ihbar": total,
+        "dogrulanan_ihbar": verified,
+        "bekleyen_ihbar": pending,
+        "basari_orani": f"{(verified/total)*100:.2f}%" if total > 0 else "0%"
+    }
