@@ -1,11 +1,22 @@
 # API Dokümantasyonu
 
-## Base URL
+Afet Koordinasyon Sistemi REST API referansı.
+
+## 📍 Base URL
 ```
 http://localhost:8000
 ```
 
-Swagger UI: [http://localhost:8000/docs](http://localhost:8000/docs)
+**Interaktif Dokümantasyon:**
+- Swagger UI: [http://localhost:8000/docs](http://localhost:8000/docs)
+- ReDoc: [http://localhost:8000/redoc](http://localhost:8000/redoc)
+
+## 📚 İçindekiler
+1. [Authentication](#authentication-endpoints)
+2. [Disaster Requests](#disaster-request-endpoints)
+3. [Clusters (Task Packages)](#cluster-endpoints)
+4. [Vehicles](#vehicle-endpoints)
+5. [Reference Data](#reference-data)
 
 ---
 
@@ -203,6 +214,156 @@ Mevcut kümeleri döndürür.
 
 ### GET /requests/task-packages/{cluster_id}
 Belirli bir kümenin detayını döndürür.
+
+### GET /requests/task-packages/{cluster_id}/recommend-vehicles
+**Otonom Araç Önerisi Sistemi**
+
+Bir küme için en uygun araçları AI ile önerir. Çok kriterli karar verme (MCDM) algoritması kullanır.
+
+**Query Parameters:**
+- `top_n` (optional): Kaç araç önerilecek (default: 3, max: 10)
+
+**Response (200):**
+```json
+[
+  {
+    "vehicle_id": "uuid",
+    "vehicle_type": "Kamyon",
+    "capacity": "10 Ton",
+    "latitude": 41.0082,
+    "longitude": 28.9784,
+    "base_speed_kmh": 60,
+    "score": 87.5,
+    "details": {
+      "distance_km": 5.2,
+      "eta_minutes": 8,
+      "available_stock": 100,
+      "required_quantity": 50,
+      "stock_score": 100.0,
+      "distance_score": 85.3,
+      "speed_score": 75.0,
+      "urgency_score": 82.5,
+      "total_score": 87.5
+    },
+    "recommendation_text": "🎯 ÖNERİLEN ARAÇ: Bu kümenin 50 çadır ihtiyacı var. En yakın ve stokta en az 50 çadır olan araç: Kamyon (10 Ton). Mesafe: 5.2 km, Tahmini Varış: 8 dakika. Mevcut Stok: 100 çadır. ⭐ Skor: 87.5/100"
+  }
+]
+```
+
+**Algoritma Kriterleri:**
+- **Aciliyet (40%)**: Kümenin öncelik skoru
+- **Mesafe (27%)**: Araç-küme arası mesafe (ETA)
+- **Stok (18%)**: Stok yeterliliği
+- **Hız (15%)**: Araç hızı
+
+**Hata Durumları:**
+- `404`: Cluster bulunamadı
+- `404`: Uygun araç bulunamadı (stok yetersiz)
+
+### POST /requests/task-packages/{cluster_id}/assign-vehicle
+**Araç Atama ve ETA Hesaplama**
+
+Bir aracı kümeye atar, stok günceller ve ETA (Tahmini Varış Süresi) hesaplar.
+
+**Query Parameters:**
+- `vehicle_id` (required): Atanacak aracın UUID'si
+
+**Response (200):**
+```json
+{
+  "message": "Araç başarıyla atandı",
+  "cluster_id": "uuid",
+  "vehicle_id": "uuid",
+  "remaining_stock": 50,
+  "distance_km": 5.2,
+  "eta_minutes": 8,
+  "cluster_status": "resolved"
+}
+```
+
+**ETA Hesaplama Formülü:**
+```
+ETA (dakika) = (Mesafe × Afet Düzeltme Katsayısı) / Araç Hızı × 60
+```
+
+- Afet Düzeltme Katsayısı: 1.2 (yol koşulları)
+- Kritik durumlarda (priority ≥75) hız %10 artırılır
+
+**Hata Durumları:**
+- `404`: Cluster veya araç bulunamadı
+- `400`: Yetersiz stok
+
+---
+
+## Vehicle Endpoints
+
+### POST /api/vehicles
+Yeni araç ekler.
+
+**Request:**
+```json
+{
+  "latitude": 41.0082,
+  "longitude": 28.9784,
+  "vehicle_type": "Kamyon",
+  "capacity": "10 Ton",
+  "base_speed_kmh": 60
+}
+```
+
+**Response (201):**
+```json
+{
+  "id": "uuid",
+  "latitude": 41.0082,
+  "longitude": 28.9784,
+  "vehicle_type": "Kamyon",
+  "capacity": "10 Ton",
+  "base_speed_kmh": 60,
+  "tent_count": 0,
+  "food_count": 0,
+  "water_count": 0,
+  "medical_count": 0,
+  "blanket_count": 0,
+  "created_at": "2026-03-27T12:00:00Z"
+}
+```
+
+### GET /api/vehicles
+Tüm araçları listeler.
+
+### GET /api/vehicles/{vehicle_id}
+Belirli bir aracı getirir.
+
+### PUT /api/vehicles/{vehicle_id}
+Araç bilgilerini günceller (stok dahil).
+
+**Request:**
+```json
+{
+  "tent_count": 100,
+  "food_count": 200,
+  "water_count": 500,
+  "medical_count": 50,
+  "blanket_count": 150,
+  "base_speed_kmh": 65
+}
+```
+
+### DELETE /api/vehicles/{vehicle_id}
+Aracı siler.
+
+---
+
+## Vehicle Types & Speeds
+
+| Araç Tipi | Varsayılan Hız (km/h) |
+|-----------|------------------------|
+| Ambulans | 70 |
+| Kamyon | 60 |
+| İtfaiye | 65 |
+| Su Tankeri | 55 |
+| İş Makinesi | 30 |
 
 ---
 

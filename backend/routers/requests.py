@@ -6,7 +6,7 @@ from uuid import UUID
 import models
 import schemas
 from database import SessionLocal
-from priority_engine import calculate_dynamic_priority
+from services.priority import calculate_dynamic_priority
 
 #router = APIRouter(prefix="/requests", tags=["requests"]) // bu silinicek 
 router = APIRouter(tags=["requests"])

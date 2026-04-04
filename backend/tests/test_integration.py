@@ -53,6 +53,10 @@ except Exception as e:
 # Test 4: Database relationships
 print("\n4️⃣ Testing database relationships...")
 try:
+    import sys
+    import os
+    sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+    
     from database import SessionLocal
     from models import User, Team, Cluster, DisasterRequest
     from sqlalchemy import inspect
@@ -93,6 +97,10 @@ except Exception as e:
 print("\n5️⃣ Testing full authentication flow...")
 try:
     # Cleanup
+    import sys
+    import os
+    sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+    
     from database import SessionLocal
     from models import User
     db = SessionLocal()

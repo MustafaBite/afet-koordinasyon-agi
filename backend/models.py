@@ -31,11 +31,9 @@ class DisasterRequest(Base):
     created_at = Column(DateTime(timezone=True), default=datetime.datetime.utcnow)
     is_verified = Column(Boolean, default=False)
     
-    # İlişkiler
     created_by_user_id = Column(UUID(as_uuid=True), ForeignKey('app_users.id'), nullable=True)
     cluster_id = Column(UUID(as_uuid=True), ForeignKey('clusters.id'), nullable=True)
     
-    # Relationships
     created_by = relationship("User", back_populates="disaster_requests")
     cluster = relationship("Cluster", back_populates="disaster_requests")
 
@@ -48,6 +46,7 @@ class ReliefVehicle(Base):
     longitude = Column(Float)
     vehicle_type = Column(String)
     capacity = Column(String)
+    base_speed_kmh = Column(Integer, default=60)
     created_at = Column(DateTime(timezone=True), default=datetime.datetime.utcnow)
     tent_count = Column(Integer, default=0)
     food_count = Column(Integer, default=0)
@@ -79,17 +78,15 @@ class Cluster(Base):
     status = Column(Enum(ClusterStatus), default=ClusterStatus.active, nullable=False)
     generated_at = Column(DateTime(timezone=True), default=datetime.datetime.utcnow)
     
-    # İlişkiler
     assigned_team_id = Column(UUID(as_uuid=True), ForeignKey('teams.id'), nullable=True)
     
-    # Relationships
     assigned_team = relationship("Team", back_populates="assigned_clusters")
     disaster_requests = relationship("DisasterRequest", back_populates="cluster")
 
 
 
 class User(Base):
-    __tablename__ = "app_users"  # Supabase auth.users ile çakışmaması için
+    __tablename__ = "app_users"
 
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
     email = Column(String, unique=True, nullable=False, index=True)
@@ -98,7 +95,7 @@ class User(Base):
     last_name = Column(String, nullable=False)
     tc_identity_no = Column(String(11), unique=True, nullable=False, index=True)
     phone = Column(String(11), nullable=False)
-    role = Column(String, nullable=False)  # citizen, volunteer, coordinator, admin
+    role = Column(String, nullable=False)
     expertise_area = Column(String, nullable=True)
     organization = Column(String, nullable=True)
     city = Column(String, nullable=False)
@@ -107,10 +104,8 @@ class User(Base):
     is_active = Column(Boolean, default=True)
     created_at = Column(DateTime(timezone=True), default=datetime.datetime.utcnow)
     
-    # İlişkiler
     team_id = Column(UUID(as_uuid=True), ForeignKey('teams.id'), nullable=True)
     
-    # Relationships
     team = relationship("Team", back_populates="members")
     disaster_requests = relationship("DisasterRequest", back_populates="created_by")
 
@@ -124,6 +119,5 @@ class Team(Base):
     location = Column(String, nullable=True)
     created_at = Column(DateTime(timezone=True), default=datetime.datetime.utcnow)
     
-    # Relationships
     members = relationship("User", back_populates="team")
     assigned_clusters = relationship("Cluster", back_populates="assigned_team")

@@ -1,3 +1,7 @@
+"""
+Dinamik Önceliklendirme Servisi
+Zaman sönümleme (Time Decay / DPS) formülü ile öncelik hesaplama
+"""
 import math
 from datetime import datetime, timezone
 
@@ -51,11 +55,21 @@ DEFAULT_BASE_SCORE = 50
 DEFAULT_WEIGHT = 0.05
 DEFAULT_MAX_TOLERANCE = 24
 
+
 def calculate_dynamic_priority(need_type: str, created_at: datetime) -> float:
     """
     Zaman sönümleme (Time Decay / DPS) formülü ile dinamik öncelik puanını hesaplar.
+    
     Formül: P_dynamic(t) = S_base + (S_base * λ * (t / M)) * (1 + C_i)
+    
     Kuyruk açlığını (queue starvation) önlemek için bekleyen ihbarların puanını zamanla artırır.
+    
+    Args:
+        need_type: İhtiyaç tipi (arama_kurtarma, medikal, vb.)
+        created_at: İhbar oluşturulma zamanı
+    
+    Returns:
+        Dinamik öncelik puanı (0-100 arası)
     """
     need = need_type.lower()
     base_score = BASE_SCORES.get(need, DEFAULT_BASE_SCORE)
