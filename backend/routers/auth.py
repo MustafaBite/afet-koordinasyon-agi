@@ -13,7 +13,7 @@ except ImportError:
 
 import models
 import schemas
-from database import SessionLocal
+from core.dependencies import get_db
 
 router = APIRouter(prefix="/auth", tags=["authentication"])
 
@@ -26,14 +26,6 @@ ALGORITHM = "HS256"
 ACCESS_TOKEN_EXPIRE_MINUTES = 60 * 24 * 7  # 7 gün
 
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="auth/login")
-
-
-def get_db():
-    db = SessionLocal()
-    try:
-        yield db
-    finally:
-        db.close()
 
 
 def verify_password(plain_password, hashed_password):

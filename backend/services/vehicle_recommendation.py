@@ -1,5 +1,5 @@
 """
-Akıllı Araç Önerisi Motoru
+Akıllı Araç Önerisi Servisi
 Çok kriterli karar verme (MCDM) ile en uygun aracı seçer
 """
 import math
@@ -55,6 +55,13 @@ def calculate_haversine_distance(lat1: float, lon1: float, lat2: float, lon2: fl
     """
     İki nokta arası kuş uçuşu mesafe (km)
     Haversine formülü
+    
+    Args:
+        lat1, lon1: İlk nokta koordinatları
+        lat2, lon2: İkinci nokta koordinatları
+    
+    Returns:
+        Mesafe (kilometre)
     """
     R = 6371  # Dünya yarıçapı (km)
     
@@ -75,6 +82,14 @@ def calculate_eta(distance_km: float, vehicle_speed: int, priority_score: float)
     """
     Tahmini varış süresi (dakika)
     Yüksek aciliyet durumlarında hız artışı uygulanır
+    
+    Args:
+        distance_km: Mesafe (kilometre)
+        vehicle_speed: Araç hızı (km/h)
+        priority_score: Öncelik skoru (0-100)
+    
+    Returns:
+        ETA (dakika)
     """
     speed = vehicle_speed
     
@@ -94,6 +109,13 @@ def calculate_eta(distance_km: float, vehicle_speed: int, priority_score: float)
 def calculate_required_quantity(need_type: str, person_count: int) -> int:
     """
     Sphere standartlarına göre gerekli malzeme miktarı
+    
+    Args:
+        need_type: İhtiyaç tipi
+        person_count: Etkilenen kişi sayısı
+    
+    Returns:
+        Gerekli malzeme miktarı
     """
     per_person = NEED_PER_PERSON.get(need_type.lower(), 1.0)
     return math.ceil(person_count * per_person)
@@ -102,6 +124,13 @@ def calculate_required_quantity(need_type: str, person_count: int) -> int:
 def get_vehicle_stock(vehicle: ReliefVehicle, need_type: str) -> int:
     """
     Aracın belirli bir ihtiyaç tipi için mevcut stoğu
+    
+    Args:
+        vehicle: Araç modeli
+        need_type: İhtiyaç tipi
+    
+    Returns:
+        Mevcut stok miktarı
     """
     stock_field = NEED_TO_STOCK_FIELD.get(need_type.lower(), "tent_count")
     return getattr(vehicle, stock_field, 0)
@@ -115,7 +144,15 @@ def calculate_vehicle_score(
 ) -> Tuple[float, Dict]:
     """
     Çok kriterli skorlama (MCDM)
-    Returns: (total_score, details_dict)
+    
+    Args:
+        vehicle: Değerlendirilecek araç
+        cluster: Hedef küme
+        required_quantity: Gerekli malzeme miktarı
+        all_vehicles: Tüm araçlar (normalizasyon için)
+    
+    Returns:
+        (total_score, details_dict)
     """
     # Mesafe hesapla
     distance_km = calculate_haversine_distance(

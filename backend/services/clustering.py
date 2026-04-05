@@ -1,10 +1,14 @@
+"""
+DBSCAN Kümeleme Servisi
+Coğrafi yakınlık bazlı afet ihbarlarını kümeleme
+"""
 import numpy as np
 from sklearn.cluster import DBSCAN
 from sqlalchemy.orm import Session
 
 import models
 from models import Cluster, ClusterStatus
-from priority_engine import calculate_dynamic_priority
+from services.priority import calculate_dynamic_priority
 from geocoder import reverse_geocode
 
 CLUSTER_RADIUS_METERS = 500
@@ -33,6 +37,7 @@ NEED_TYPE_LABELS = {
 
 
 def _priority_level(score: float) -> str:
+    """Öncelik skorunu seviyeye çevirir"""
     for threshold, level in PRIORITY_LEVELS:
         if score >= threshold:
             return level
@@ -40,6 +45,7 @@ def _priority_level(score: float) -> str:
 
 
 def _make_cluster_name(need_type: str, location: dict) -> str:
+    """Küme için anlamlı isim oluşturur"""
     type_label = NEED_TYPE_LABELS.get(need_type.lower(), need_type.capitalize())
     parts = [p for p in [location.get("district"), location.get("neighborhood")] if p]
     location_str = " ".join(parts) if parts else "Bilinmeyen Bölge"
@@ -47,7 +53,16 @@ def _make_cluster_name(need_type: str, location: dict) -> str:
 
 
 def _compute_clusters(requests: list, need_type: str) -> list[dict]:
-    """DBSCAN uygular, ham küme verilerini döndürür (DB'ye yazmaz)."""
+    """
+    DBSCAN uygular, ham küme verilerini döndürür (DB'ye yazmaz).
+    
+    Args:
+        requests: İhbar listesi
+        need_type: İhtiyaç tipi
+    
+    Returns:
+        Küme bilgileri listesi
+    """
     coords_rad = np.radians([[r.latitude, r.longitude] for r in requests])
     results = []
 
@@ -100,6 +115,12 @@ def run_clustering(db: Session) -> list[Cluster]:
     """
     Tüm talepleri kümeler, sonuçları DB'ye yazar.
     Mevcut aktif kümeler silinir, yenileri oluşturulur.
+    
+    Args:
+        db: Database session
+    
+    Returns:
+        Oluşturulan kümelerin listesi (öncelik sırasına göre)
     """
     all_requests = db.query(models.DisasterRequest).filter(
         models.DisasterRequest.status == models.RequestStatus.pending

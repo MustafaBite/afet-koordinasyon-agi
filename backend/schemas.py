@@ -70,14 +70,59 @@ class VehicleCreate(BaseModel):
     longitude: float
     vehicle_type: str
     capacity: str
+    base_speed_kmh: int = 60
 
 
 class VehicleUpdate(BaseModel):
+    tent_count: int | None = None
+    food_count: int | None = None
+    water_count: int | None = None
+    medical_count: int | None = None
+    blanket_count: int | None = None
+    base_speed_kmh: int | None = None
+
+
+class VehicleResponse(BaseModel):
+    id: UUID
+    latitude: float
+    longitude: float
+    vehicle_type: str
+    capacity: str
+    base_speed_kmh: int
     tent_count: int
     food_count: int
     water_count: int
     medical_count: int
     blanket_count: int
+    created_at: datetime
+
+    model_config = {"from_attributes": True}
+
+
+# Vehicle Recommendation Schemas
+
+class VehicleRecommendationDetails(BaseModel):
+    distance_km: float
+    eta_minutes: int
+    available_stock: int
+    required_quantity: int
+    stock_score: float
+    distance_score: float
+    speed_score: float
+    urgency_score: float
+    total_score: float
+
+
+class VehicleRecommendationResponse(BaseModel):
+    vehicle_id: UUID
+    vehicle_type: str
+    capacity: str
+    latitude: float
+    longitude: float
+    base_speed_kmh: int
+    score: float
+    details: VehicleRecommendationDetails
+    recommendation_text: str  # AI tarafından oluşturulan açıklama
 
 
 

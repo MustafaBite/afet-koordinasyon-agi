@@ -7,26 +7,27 @@ import sys
 
 BASE_URL = "http://localhost:8000"
 
+
 def test_health():
     """Test server health"""
-    print("\n🏥 Testing server health...")
+    print("\n[INFO] Testing server health...")
     try:
         response = requests.get(f"{BASE_URL}/health", timeout=5)
         if response.status_code == 200:
-            print("✅ Server is running!")
+            print("[PASS] Server is running")
             return True
         else:
-            print(f"❌ Server returned {response.status_code}")
+            print(f"[FAIL] Server returned {response.status_code}")
             return False
     except Exception as e:
-        print(f"❌ Server not reachable: {e}")
-        print("💡 Make sure backend is running: uvicorn main:app --reload")
+        print(f"[FAIL] Server not reachable: {e}")
+        print("[INFO] Make sure backend is running: uvicorn main:app --reload")
         return False
 
 
 def test_register():
     """Test user registration"""
-    print("\n🧪 Testing POST /auth/register...")
+    print("\n[TEST] POST /auth/register")
     
     user_data = {
         "email": "test@example.com",
@@ -45,27 +46,26 @@ def test_register():
     
     try:
         response = requests.post(f"{BASE_URL}/auth/register", json=user_data, timeout=10)
-        print(f"Status: {response.status_code}")
         
         if response.status_code == 201:
             data = response.json()
-            print("✅ Registration successful!")
-            print(f"   Token: {data['access_token'][:30]}...")
-            print(f"   User: {data['user']['first_name']} {data['user']['last_name']}")
-            print(f"   Role: {data['user']['role']}")
+            print("[PASS] Registration successful")
+            print(f"       Token: {data['access_token'][:30]}...")
+            print(f"       User: {data['user']['first_name']} {data['user']['last_name']}")
+            print(f"       Role: {data['user']['role']}")
             return data['access_token']
         else:
-            print(f"❌ Registration failed")
-            print(f"   Response: {response.json()}")
+            print(f"[FAIL] Registration failed")
+            print(f"       Response: {response.json()}")
             return None
     except Exception as e:
-        print(f"❌ Error: {e}")
+        print(f"[FAIL] Error: {e}")
         return None
 
 
 def test_login():
     """Test user login"""
-    print("\n🧪 Testing POST /auth/login...")
+    print("\n[TEST] POST /auth/login")
     
     credentials = {
         "email": "test@example.com",
@@ -74,54 +74,56 @@ def test_login():
     
     try:
         response = requests.post(f"{BASE_URL}/auth/login", json=credentials, timeout=10)
-        print(f"Status: {response.status_code}")
         
         if response.status_code == 200:
             data = response.json()
-            print("✅ Login successful!")
-            print(f"   Token: {data['access_token'][:30]}...")
-            print(f"   User: {data['user']['first_name']} {data['user']['last_name']}")
+            print("[PASS] Login successful")
+            print(f"       Token: {data['access_token'][:30]}...")
+            print(f"       User: {data['user']['first_name']} {data['user']['last_name']}")
             return data['access_token']
         else:
-            print(f"❌ Login failed")
-            print(f"   Response: {response.json()}")
+            print(f"[FAIL] Login failed")
+            print(f"       Response: {response.json()}")
             return None
     except Exception as e:
-        print(f"❌ Error: {e}")
+        print(f"[FAIL] Error: {e}")
         return None
 
 
 def test_get_me(token):
     """Test get current user"""
-    print("\n🧪 Testing GET /auth/me...")
+    print("\n[TEST] GET /auth/me")
     
     headers = {"Authorization": f"Bearer {token}"}
     
     try:
         response = requests.get(f"{BASE_URL}/auth/me", headers=headers, timeout=10)
-        print(f"Status: {response.status_code}")
         
         if response.status_code == 200:
             data = response.json()
-            print("✅ Get user successful!")
-            print(f"   Name: {data['first_name']} {data['last_name']}")
-            print(f"   Email: {data['email']}")
-            print(f"   Role: {data['role']}")
-            print(f"   Organization: {data['organization']}")
+            print("[PASS] Get user successful")
+            print(f"       Name: {data['first_name']} {data['last_name']}")
+            print(f"       Email: {data['email']}")
+            print(f"       Role: {data['role']}")
+            print(f"       Organization: {data['organization']}")
             return True
         else:
-            print(f"❌ Get user failed")
-            print(f"   Response: {response.json()}")
+            print(f"[FAIL] Get user failed")
+            print(f"       Response: {response.json()}")
             return False
     except Exception as e:
-        print(f"❌ Error: {e}")
+        print(f"[FAIL] Error: {e}")
         return False
 
 
 def cleanup_test_user():
     """Clean up test user from database"""
-    print("\n🧹 Cleaning up test user...")
+    print("\n[INFO] Cleaning up test user...")
     try:
+        import sys
+        import os
+        sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+        
         from database import SessionLocal
         from models import User
         
@@ -130,48 +132,41 @@ def cleanup_test_user():
         if test_user:
             db.delete(test_user)
             db.commit()
-            print("✅ Test user deleted")
+            print("[PASS] Test user deleted")
         else:
-            print("ℹ️  No test user found")
+            print("[INFO] No test user found")
         db.close()
     except Exception as e:
-        print(f"⚠️  Cleanup failed: {e}")
+        print(f"[WARN] Cleanup failed: {e}")
 
 
 if __name__ == "__main__":
     print("=" * 60)
-    print("🔐 AUTHENTICATION API TEST SUITE")
+    print("AUTHENTICATION API TEST SUITE")
     print("=" * 60)
     
-    # Test 0: Server health
     if not test_health():
         sys.exit(1)
     
-    # Cleanup before tests
     cleanup_test_user()
     
-    # Test 1: Register
     token = test_register()
     if not token:
-        print("\n❌ Registration test failed. Stopping tests.")
+        print("\n[FAIL] Registration test failed. Stopping tests.")
         sys.exit(1)
     
-    # Test 2: Get Me (with register token)
     test_get_me(token)
     
-    # Test 3: Login
     token = test_login()
     if not token:
-        print("\n❌ Login test failed. Stopping tests.")
+        print("\n[FAIL] Login test failed. Stopping tests.")
         sys.exit(1)
     
-    # Test 4: Get Me (with login token)
     test_get_me(token)
     
-    # Cleanup after tests
     cleanup_test_user()
     
     print("\n" + "=" * 60)
-    print("✅ ALL TESTS PASSED!")
+    print("ALL TESTS PASSED")
     print("=" * 60)
 
