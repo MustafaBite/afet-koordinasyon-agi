@@ -1,21 +1,21 @@
-import { USER_ROLES } from '../constants/formOptions'; // Rolleri çekmek için gereken import
+import { USER_ROLES } from '../constants/formOptions'; 
 
-// 1. ADIM: activeTab, setActiveTab ve user proplarını alıyoruz
+
 export default function Sidebar({ isOpen, activeTab, setActiveTab, user }) {
   
-  // Gelen kullanıcı verilerini ayarla (Giriş yapılmamışsa veya yükleniyorsa varsayılan değerler)
+  
   const userName = user ? `${user.first_name} ${user.last_name}` : 'Ahmet Yılmaz';
   const userRole = user && user.role && USER_ROLES ? USER_ROLES[user.role] : 'Saha Koordinatörü';
   const userPhoto = user?.profile_photo_url || `https://ui-avatars.com/api/?name=${encodeURIComponent(userName)}&background=2563eb&color=fff&bold=true`;
 
-  // Hangi sekmenin aktif olduğuna göre sınıf (CSS) döndüren fonksiyon
+ 
   const getTabClass = (tabName) => {
     const baseClass = "flex items-center gap-3 px-4 py-3 rounded-xl font-medium transition-all cursor-pointer";
     if (activeTab === tabName) {
-      // Aktif sekme stili (Mavi ve parlamalı)
+   
       return `${baseClass} bg-blue-600 text-white shadow-lg shadow-blue-600/40`;
     } else {
-      // Pasif sekme stili (Gri, üzerine gelince aydınlanan)
+      
       return `${baseClass} text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-200 dark:hover:bg-slate-800/50`;
     }
   };
