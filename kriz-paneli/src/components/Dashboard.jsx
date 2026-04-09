@@ -12,7 +12,7 @@ const kirmiziPin = new L.Icon({
   shadowSize: [41, 41]
 });
 
-// Harita uçuş kontrolü için iç bileşen (Diğer taraftan gelen özellik)
+
 function MapController({ flyTo }) {
   const map = useMap();
   useEffect(() => {
