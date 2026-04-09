@@ -45,7 +45,7 @@ export default function Dashboard() {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [secilenGorev, setSecilenGorev] = useState(null);
 
-  // MOCK VERİ (Senin eklediğin)
+  #MOCK VERİ
   const [clusters, setClusters] = useState([
     {
       "cluster_id": "fake-uuid-1",
@@ -72,7 +72,7 @@ export default function Dashboard() {
     { id: 3, isim: "Ambulans (Acil)", mesafe: "1.5 km" }
   ];
 
-  // --- API VERİ ÇEKME (Birleştirilmiş Mantık) ---
+   --- API VERİ ÇEKME---
   useEffect(() => {
     const fetchData = async () => {
       try {
@@ -94,7 +94,7 @@ export default function Dashboard() {
 
   const konumaGit = (lat, lng) => setFlyTo([lat, lng]);
 
-  // --- HARİTA YENİDEN BOYUTLANDIRMA (Senin Kodun) ---
+   --- HARİTA YENİDEN BOYUTLANDIRMA---
   useEffect(() => {
     const haritayiGuncelle = () => {
       if (mapRef.current) {
@@ -115,13 +115,13 @@ export default function Dashboard() {
     };
   }, []);
 
-  // Uygulama çökmesin diye eklenen örnek atama fonksiyonu
+  
   const aracıAta = (arac) => {
     alert(`${arac.isim} başarıyla görevlendirildi!`);
     setIsModalOpen(false);
   };
 
-  // --- HESAPLANAN VERİLER ---
+  
   const verified = ihbarlar.filter(i => i.is_verified).length;
   const normalIhbarlar = ihbarlar.filter(i => i.dynamic_priority_score < 80);
 
@@ -156,7 +156,7 @@ export default function Dashboard() {
         </div>
       )}
 
-      {/* --- ANA YERLEŞİM (Senin Tasarımın) --- */}
+      {/* --- ANA YERLEŞİM --- */}
       <div className="grid grid-cols-1 xl:grid-cols-3 gap-8">
         
         {/* SOL TARAF: LİSTELER */}
@@ -246,7 +246,7 @@ export default function Dashboard() {
 
         </div> 
 
-        {/* SAĞ TARAF: HARİTA ALANI (Taktiksel Görünüm) */}
+        {/* HARİTA ALANI */}
         <div className="xl:col-span-1 space-y-4">
           <div className="flex items-center justify-between">
              <h3 className="text-lg font-bold text-slate-900 dark:text-white flex items-center gap-2">
@@ -259,7 +259,7 @@ export default function Dashboard() {
           <div className="relative h-[600px] w-full rounded-2xl overflow-hidden shadow-xl border border-slate-700/50">
             <MapContainer ref={mapRef} center={[40.990, 29.020]} zoom={12} style={{ height: '100%', width: '100%' }} zoomControl={false}>
               
-              {/* Haritanın tıklanan yere uçmasını sağlayan bileşeni ekledik */}
+              {}
               <MapController flyTo={flyTo} /> 
               
               <TileLayer url="https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png" />
