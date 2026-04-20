@@ -45,41 +45,30 @@ export default function Dashboard() {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [secilenGorev, setSecilenGorev] = useState(null);
 
-  #MOCK VERİ
-  const [clusters, setClusters] = useState([
-    {
-      "cluster_id": "fake-uuid-1",
-      "need_type": "yangin",
-      "cluster_name": "Kadıköy Osmanağa Mahallesi - Yangın Söndürme Kümesi",
-      "center_latitude": 40.990743,
-      "center_longitude": 29.028482,
-      "location": {
-        "district": "Kadıköy",
-        "neighborhood": "Osmanağa Mahallesi",
-        "street": "Kuşdili Caddesi",
-        "full_address": "Kuşdili Caddesi, Osmanağa Mahallesi, Kadıköy"
-      },
-      "request_count": 30,
-      "total_persons_affected": 280,
-      "priority_level": "Yüksek Aciliyet",
-      "status": "active"
-    }
-  ]);
+  // DİNAMİK YAPI
+  const [clusters, setClusters] = useState([]);
+  const [musaitAraclar, setMusaitAraclar] = useState([]);
+  const [araclarLoading, setAraclarLoading] = useState(false);
 
-  const musaitAraclar = [
-    { id: 1, isim: "1 Nolu AFAD Arama Kurtarma", mesafe: "2 km" },
-    { id: 2, isim: "İtfaiye Ekibi - Merkez", mesafe: "4 km" },
-    { id: 3, isim: "Ambulans (Acil)", mesafe: "1.5 km" }
-  ];
-
-   --- API VERİ ÇEKME---
+  // --- API VERİ ÇEKME---
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const response = await fetch('http://127.0.0.1:8000/talepler/oncelikli');
-        if (!response.ok) throw new Error(`HTTP ${response.status}`);
-        const data = await response.json();
-        setIhbarlar(data);
+        const [reqRes, clusterRes] = await Promise.all([
+          fetch('http://127.0.0.1:8000/talepler/oncelikli'),
+          fetch('http://127.0.0.1:8000/requests/task-packages')
+        ]);
+        
+        if (!reqRes.ok) throw new Error(`HTTP ${reqRes.status}`);
+        
+        const reqData = await reqRes.json();
+        setIhbarlar(reqData);
+
+        if (clusterRes.ok) {
+          const clusterData = await clusterRes.json();
+          setClusters(clusterData);
+        }
+        
         setLoading(false);
       } catch (e) {
         setError(e.message);
@@ -94,7 +83,7 @@ export default function Dashboard() {
 
   const konumaGit = (lat, lng) => setFlyTo([lat, lng]);
 
-   --- HARİTA YENİDEN BOYUTLANDIRMA---
+  // --- HARİTA YENİDEN BOYUTLANDIRMA---
   useEffect(() => {
     const haritayiGuncelle = () => {
       if (mapRef.current) {
@@ -116,9 +105,19 @@ export default function Dashboard() {
   }, []);
 
   
-  const aracıAta = (arac) => {
-    alert(`${arac.isim} başarıyla görevlendirildi!`);
-    setIsModalOpen(false);
+  const aracıAta = async (arac) => {
+    try {
+      const res = await fetch(`http://127.0.0.1:8000/requests/task-packages/${secilenGorev.cluster_id}/assign-vehicle?vehicle_id=${arac.vehicle_id}`, { method: 'POST' });
+      if (res.ok) {
+        alert(`${arac.vehicle_type || 'Araç'} başarıyla görevlendirildi!`);
+        setIsModalOpen(false);
+      } else {
+         const data = await res.json();
+         alert(`Hata: ${data.detail || 'Görevlendirilemedi'}`);
+      }
+    } catch(e) {
+       alert("Bağlantı hatası oluştu.");
+    }
   };
 
   
@@ -208,12 +207,26 @@ export default function Dashboard() {
                   </div>
 
                   <button 
-                    onClick={(e) => {
+                    onClick={async (e) => {
                       e.stopPropagation();
                       setSecilenGorev(cluster);
                       setIsModalOpen(true);
+                      setAraclarLoading(true);
+                      try {
+                        const res = await fetch(`http://127.0.0.1:8000/requests/task-packages/${cluster.cluster_id}/recommend-vehicles?top_n=3`);
+                        if (res.ok) {
+                          const data = await res.json();
+                          setMusaitAraclar(data);
+                        } else {
+                          setMusaitAraclar([]);
+                        }
+                      } catch(err) {
+                         setMusaitAraclar([]);
+                      } finally {
+                        setAraclarLoading(false);
+                      }
                     }}
-                    disabled={cluster.status === 'yolda'}
+                    disabled={cluster.status === 'resolved'}
                     className={`w-full py-2.5 mt-auto rounded-lg text-xs font-bold transition-all duration-500 shadow-sm ${
                       cluster.status === 'yolda' 
                         ? 'bg-slate-200 dark:bg-slate-800 text-slate-400 dark:text-slate-500 cursor-not-allowed border border-slate-300 dark:border-slate-700' 
@@ -293,15 +306,19 @@ export default function Dashboard() {
             <p className="text-xs text-slate-500 mb-4">Hedef: {secilenGorev?.cluster_name}</p>
             
             <div className="space-y-3">
-              {musaitAraclar.map((arac) => (
-                <div key={arac.id} className="flex justify-between items-center p-3 bg-slate-50 dark:bg-slate-800 rounded-lg border border-slate-200 dark:border-slate-700">
-                  <div>
-                    <p className="font-bold text-sm text-slate-800 dark:text-slate-200">{arac.isim}</p>
-                    <p className="text-xs text-slate-500">📍 {arac.mesafe} uzaklıkta</p>
+              {araclarLoading ? (
+                 <div className="text-center p-4 text-slate-500 font-medium">✨ Müsait ekipler yapay zeka ile taranıyor...</div>
+              ) : musaitAraclar.length === 0 ? (
+                 <div className="text-center p-4 text-slate-500 bg-slate-50 dark:bg-slate-800 rounded-lg text-sm">Uygun kapasitede veya yakında araç bulunamadı.</div>
+              ) : musaitAraclar.map((arac) => (
+                <div key={arac.vehicle_id} className="flex justify-between items-center p-3 bg-slate-50 dark:bg-slate-800 rounded-lg border border-slate-200 dark:border-slate-700">
+                  <div className="pr-4">
+                    <p className="font-bold text-sm text-slate-800 dark:text-slate-200">{arac.vehicle_type}</p>
+                    <p className="text-[11px] text-slate-500 mt-1 leading-tight">{arac.recommendation_text}</p>
                   </div>
                   <button 
                     onClick={() => aracıAta(arac)}
-                    className="bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold py-1.5 px-4 rounded"
+                    className="bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold py-1.5 px-4 rounded shrink-0"
                   >
                     Görevlendir
                   </button>

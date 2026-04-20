@@ -86,8 +86,8 @@ app.add_middleware(
 try:
     from routers import requests as requests_router, clusters as clusters_router, auth as auth_router, vehicles as vehicles_router
     app.include_router(auth_router.router)
+    app.include_router(clusters_router.router)   # /requests/task-packages — önce ekle
     app.include_router(requests_router.router, prefix="/api/ihbarlar")
-    app.include_router(clusters_router.router)
     app.include_router(vehicles_router.router)
 except Exception as e:
     print(f"ROUTER HATASI: {e}")
@@ -290,3 +290,7 @@ async def start_swarm_operation(data: SuruBaslatSchema):
     print(f"OPERASYON: {data.sektor_id} bölgesinde {data.aksiyon} tetiklendi!")
     await manager.broadcast({"event": "SWARM_STARTED", "sector": data.sektor_id, "action": data.aksiyon})
     return {"status": "started", "detail": f"{data.sektor_id} için operasyon başladı."}
+
+
+
+
