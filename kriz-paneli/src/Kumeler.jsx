@@ -17,9 +17,8 @@ export default function Kumeler() {
   const [loading, setLoading] = useState(true);
   const [generating, setGenerating] = useState(false);
   const [error, setError] = useState(null);
-  const [yonlendirilenId, setYonlendirilenId] = useState(null);
   const [bildirim, setBildirim] = useState(null);
-  const [modal, setModal] = useState(null); // { kume } — araç seçim modalı
+  const [modal, setModal] = useState(null);
   const [araclar, setAraclar] = useState([]);
   const [seciliAracId, setSeciliAracId] = useState('');
   const [ataniyor, setAtaniyor] = useState(false);
