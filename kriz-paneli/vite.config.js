@@ -27,6 +27,22 @@ export default defineConfig({
       '/health': {
         target: 'http://127.0.0.1:8000',
         changeOrigin: true,
+      },
+      '/araclar': {
+        target: 'http://127.0.0.1:8000',
+        changeOrigin: true,
+      },
+      '/arac-ekle': {
+        target: 'http://127.0.0.1:8000',
+        changeOrigin: true,
+      },
+      '/assign-vehicle': {
+        target: 'http://127.0.0.1:8000',
+        changeOrigin: true,
+      },
+      '/buyuk-depremler': {
+        target: 'http://127.0.0.1:8000',
+        changeOrigin: true,
       }
     }
   }

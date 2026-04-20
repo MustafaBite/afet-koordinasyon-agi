@@ -1,220 +1,260 @@
-import React from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
+
+const PRIORITY_COLORS = {
+  'Kritik': { border: 'border-red-500/30', bg: 'bg-red-500/10', badge: 'bg-red-600 text-white', text: 'text-red-500', btn: 'bg-blue-600 hover:bg-blue-700' },
+  'Yüksek': { border: 'border-orange-500/30', bg: 'bg-orange-500/10', badge: 'bg-orange-500 text-white', text: 'text-orange-400', btn: 'bg-blue-600 hover:bg-blue-700' },
+  'Orta':   { border: 'border-amber-500/30',  bg: 'bg-amber-500/10',  badge: 'bg-amber-500 text-slate-900', text: 'text-amber-400', btn: 'bg-slate-700 hover:bg-slate-600' },
+  'Düşük':  { border: 'border-slate-600/30',  bg: 'bg-slate-700/10',  badge: 'bg-slate-600 text-white', text: 'text-slate-400', btn: 'bg-slate-700 hover:bg-slate-600' },
+};
+
+const NEED_LABELS = {
+  arama_kurtarma: 'Arama Kurtarma', medikal: 'Medikal', yangin: 'Yangın',
+  enkaz: 'Enkaz', su: 'Su', barinma: 'Barınma', gida: 'Gıda',
+  is_makinesi: 'İş Makinesi', ulasim: 'Ulaşım',
+};
 
 export default function Kumeler() {
+  const [kumeler, setKumeler] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [generating, setGenerating] = useState(false);
+  const [error, setError] = useState(null);
+  const [yonlendirilenId, setYonlendirilenId] = useState(null);
+  const [bildirim, setBildirim] = useState(null);
+
+  const fetchKumeler = useCallback(async () => {
+    try {
+      const r = await fetch('/requests/task-packages?status=active');
+      if (!r.ok) throw new Error(`HTTP ${r.status}`);
+      const data = await r.json();
+      setKumeler(data);
+      setError(null);
+    } catch (e) {
+      setError(e.message);
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    fetchKumeler();
+  }, [fetchKumeler]);
+
+  const handleGenerate = async () => {
+    setGenerating(true);
+    try {
+      const r = await fetch('/requests/task-packages/generate', { method: 'POST' });
+      if (!r.ok) throw new Error(`HTTP ${r.status}`);
+      const data = await r.json();
+      setKumeler(data);
+      setBildirim({ type: 'success', msg: `${data.length} küme oluşturuldu.` });
+      setTimeout(() => setBildirim(null), 3000);
+    } catch (e) {
+      setBildirim({ type: 'error', msg: `Küme oluşturulamadı: ${e.message}` });
+      setTimeout(() => setBildirim(null), 4000);
+    } finally {
+      setGenerating(false);
+    }
+  };
+
+  const handleYonlendir = async (kume) => {
+    setYonlendirilenId(kume.cluster_id);
+    // Bildirim simülasyonu — assign-vehicle DB gerektiriyor, şimdilik konsol
+    console.log(`EKİP YÖNLENDİR: ${kume.cluster_name} | ${kume.center_latitude}, ${kume.center_longitude}`);
+    setBildirim({ type: 'info', msg: `"${kume.cluster_name}" için ekip yönlendirme talebi gönderildi.` });
+    setTimeout(() => { setYonlendirilenId(null); setBildirim(null); }, 3000);
+  };
+
+  const toplam = kumeler.length;
+  const kritik = kumeler.filter(k => k.priority_level === 'Kritik').length;
+  const toplamKisi = kumeler.reduce((s, k) => s + (k.total_persons_affected || 0), 0);
+  const bekleyen = kumeler.reduce((s, k) => s + (k.status_summary?.pending || 0), 0);
+
   return (
     <div className="flex-1 overflow-y-auto bg-slate-900 text-white relative p-6">
-      
       <div className="max-w-[1600px] mx-auto grid grid-cols-12 gap-6">
-        
-        {/* ANA BAŞLIK VE BUTONLAR */}
+
+        {/* BAŞLIK */}
         <div className="col-span-12 flex justify-between items-end mb-2">
           <div>
             <h2 className="text-2xl font-extrabold tracking-tight text-white">İhbar Kümeleri ve Analiz</h2>
-            <p className="text-slate-400 text-sm mt-1">Gerçek zamanlı yapay zeka tarafından gruplandırılmış acil durum veri akışı.</p>
+            <p className="text-slate-400 text-sm mt-1">
+              {loading ? 'Yükleniyor...' : `${toplam} aktif küme — ${toplamKisi} etkilenen kişi`}
+            </p>
           </div>
           <div className="flex gap-3">
-            <button className="flex items-center gap-2 bg-slate-800 px-4 py-2 rounded-xl text-sm font-semibold hover:bg-slate-700 transition-colors active:scale-95 border border-slate-700">
-              <span className="material-symbols-outlined text-lg">filter_list</span>
-              Filtrele
+            <button
+              onClick={fetchKumeler}
+              className="flex items-center gap-2 bg-slate-800 px-4 py-2 rounded-xl text-sm font-semibold hover:bg-slate-700 transition-colors border border-slate-700"
+            >
+              <span className="material-symbols-outlined text-lg">refresh</span>
+              Yenile
             </button>
-            <button className="flex items-center gap-2 bg-rose-600 px-4 py-2 rounded-xl text-sm font-bold shadow-lg shadow-rose-600/20 hover:brightness-110 transition-all active:scale-95">
-              <span className="material-symbols-outlined text-lg" style={{ fontVariationSettings: "'FILL' 1" }}>emergency</span>
-              ACİL DURUM BİLDİR
+            <button
+              onClick={handleGenerate}
+              disabled={generating}
+              className="flex items-center gap-2 bg-rose-600 px-4 py-2 rounded-xl text-sm font-bold shadow-lg shadow-rose-600/20 hover:brightness-110 transition-all disabled:opacity-60"
+            >
+              <span className="material-symbols-outlined text-lg" style={{ fontVariationSettings: "'FILL' 1" }}>
+                {generating ? 'hourglass_empty' : 'emergency'}
+              </span>
+              {generating ? 'OLUŞTURULUYOR...' : 'KÜMELERİ GÜNCELLE'}
             </button>
           </div>
         </div>
 
-        {/* SOL TARAF: KÜME KARTLARI */}
+        {/* BİLDİRİM */}
+        {bildirim && (
+          <div className={`col-span-12 px-4 py-3 rounded-xl text-sm font-semibold border ${
+            bildirim.type === 'success' ? 'bg-green-500/10 border-green-500/30 text-green-400' :
+            bildirim.type === 'error'   ? 'bg-red-500/10 border-red-500/30 text-red-400' :
+                                          'bg-blue-500/10 border-blue-500/30 text-blue-400'
+          }`}>
+            {bildirim.msg}
+          </div>
+        )}
+
+        {/* HATA */}
+        {error && (
+          <div className="col-span-12 bg-red-500/10 border border-red-500/30 text-red-400 px-4 py-3 rounded-xl text-sm">
+            Backend bağlantı hatası: {error}
+          </div>
+        )}
+
+        {/* KÜME KARTLARI */}
         <div className="col-span-12 lg:col-span-8 space-y-6">
-          
-          {/* YÜKSEK ACİLİYET KARTI */}
-          <div className="bg-slate-800 border border-red-500/20 rounded-xl overflow-hidden shadow-sm">
-            <div className="bg-red-500/10 p-4 border-b border-red-500/20 flex justify-between items-center">
-              <div className="flex items-center gap-3">
-                <span className="bg-red-600 text-white text-[10px] font-bold px-2 py-0.5 rounded uppercase tracking-tighter">YÜKSEK ACİLİYET</span>
-                <h3 className="font-bold text-white">KÜME #TR-34-A1 (KADIKÖY)</h3>
-              </div>
-              <div className="flex items-center gap-1 text-red-500 text-xs font-bold">
-                <span className="material-symbols-outlined text-sm">schedule</span>
-                SON GÜNCELLEME: 2DK ÖNCE
-              </div>
+          {loading && (
+            <div className="text-center text-slate-400 py-16">Kümeler yükleniyor...</div>
+          )}
+          {!loading && kumeler.length === 0 && !error && (
+            <div className="text-center text-slate-400 py-16 bg-slate-800 rounded-xl border border-slate-700">
+              <span className="material-symbols-outlined text-4xl mb-3 block">hub</span>
+              Henüz küme yok. "KÜMELERİ GÜNCELLE" butonuna basarak oluşturabilirsin.
             </div>
-            
-            <div className="p-6 grid grid-cols-3 gap-6">
-              <div className="col-span-2 space-y-4">
-                <div className="flex gap-4">
-                  <div className="flex-1 bg-slate-900/50 p-4 rounded-lg border border-slate-700/50">
-                    <p className="text-[10px] text-slate-400 uppercase font-bold tracking-widest mb-1">ETKİLENEN NÜFUS</p>
-                    <p className="text-2xl font-extrabold">~450 <span className="text-sm font-medium text-slate-400">kişi</span></p>
+          )}
+          {kumeler.map((kume) => {
+            const c = PRIORITY_COLORS[kume.priority_level] || PRIORITY_COLORS['Düşük'];
+            const adres = kume.location?.full_address || kume.location?.district || `${kume.center_latitude?.toFixed(3)}, ${kume.center_longitude?.toFixed(3)}`;
+            return (
+              <div key={kume.cluster_id} className={`bg-slate-800 border ${c.border} rounded-xl overflow-hidden shadow-sm`}>
+                <div className={`${c.bg} p-4 border-b ${c.border} flex justify-between items-center`}>
+                  <div className="flex items-center gap-3">
+                    <span className={`${c.badge} text-[10px] font-bold px-2 py-0.5 rounded uppercase tracking-tighter`}>
+                      {kume.priority_level}
+                    </span>
+                    <h3 className="font-bold text-white">{kume.cluster_name}</h3>
                   </div>
-                  <div className="flex-1 bg-slate-900/50 p-4 rounded-lg border border-slate-700/50 text-red-500">
-                    <p className="text-[10px] uppercase font-bold tracking-widest mb-1 text-slate-400">KAYNAK İHTİYACI</p>
-                    <p className="text-2xl font-extrabold">KRİTİK</p>
-                  </div>
-                </div>
-                <div className="bg-slate-900/50 p-4 rounded-lg border border-slate-700/50">
-                  <p className="text-[10px] text-slate-400 uppercase font-bold tracking-widest mb-2">İHBAR ÖZETİ (AI ANALİZİ)</p>
-                  <p className="text-sm leading-relaxed text-slate-300">Merkezi lokasyonda yapısal çökme ve yangın ihbarları yoğunlaşmaktadır. Gaz sızıntısı riski %85. Tahliye rotaları kısmen kapalı.</p>
-                </div>
-              </div>
-              <div className="col-span-1 flex flex-col justify-between">
-                <div className="aspect-square bg-slate-950 rounded-lg border border-slate-700/50 relative overflow-hidden">
-                  <img alt="Cluster Map Kadikoy" className="w-full h-full object-cover opacity-60" src="https://images.unsplash.com/photo-1524661135-423995f22d0b?q=80&w=400&auto=format&fit=crop" />
-                  <div className="absolute inset-0 flex items-center justify-center">
-                    <span className="material-symbols-outlined text-red-500 text-4xl animate-pulse">location_on</span>
+                  <div className={`flex items-center gap-1 ${c.text} text-xs font-bold`}>
+                    <span className="material-symbols-outlined text-sm">schedule</span>
+                    {new Date(kume.generated_at).toLocaleTimeString('tr-TR', { hour: '2-digit', minute: '2-digit' })}
                   </div>
                 </div>
-                <button className="w-full bg-blue-600 text-white py-3 rounded-xl font-bold mt-4 hover:bg-blue-700 transition-colors active:scale-95 flex items-center justify-center gap-2">
-                  <span className="material-symbols-outlined">send</span>
-                  EKİP YÖNLENDİR
-                </button>
-              </div>
-            </div>
-          </div>
 
-          {/* ORTA SEVİYE KARTI */}
-          <div className="bg-slate-800 border border-amber-500/20 rounded-xl overflow-hidden shadow-sm">
-            <div className="bg-amber-500/10 p-4 border-b border-amber-500/20 flex justify-between items-center">
-              <div className="flex items-center gap-3">
-                <span className="bg-amber-500 text-slate-900 text-[10px] font-bold px-2 py-0.5 rounded uppercase tracking-tighter">ORTA SEVİYE</span>
-                <h3 className="font-bold text-white">KÜME #TR-34-B2 (ÜSKÜDAR)</h3>
-              </div>
-              <div className="flex items-center gap-1 text-amber-500 text-xs font-bold">
-                <span className="material-symbols-outlined text-sm">schedule</span>
-                SON GÜNCELLEME: 12DK ÖNCE
-              </div>
-            </div>
-            
-            <div className="p-6 grid grid-cols-3 gap-6">
-              <div className="col-span-2 space-y-4">
-                <div className="flex gap-4">
-                  <div className="flex-1 bg-slate-900/50 p-4 rounded-lg border border-slate-700/50">
-                    <p className="text-[10px] text-slate-400 uppercase font-bold tracking-widest mb-1">ETKİLENEN NÜFUS</p>
-                    <p className="text-2xl font-extrabold">~120 <span className="text-sm font-medium text-slate-400">kişi</span></p>
+                <div className="p-6 grid grid-cols-3 gap-6">
+                  <div className="col-span-2 space-y-4">
+                    <div className="flex gap-4">
+                      <div className="flex-1 bg-slate-900/50 p-4 rounded-lg border border-slate-700/50">
+                        <p className="text-[10px] text-slate-400 uppercase font-bold tracking-widest mb-1">ETKİLENEN NÜFUS</p>
+                        <p className="text-2xl font-extrabold">~{kume.total_persons_affected} <span className="text-sm font-medium text-slate-400">kişi</span></p>
+                      </div>
+                      <div className={`flex-1 bg-slate-900/50 p-4 rounded-lg border border-slate-700/50 ${c.text}`}>
+                        <p className="text-[10px] uppercase font-bold tracking-widest mb-1 text-slate-400">İHTİYAÇ TÜRÜ</p>
+                        <p className="text-xl font-extrabold">{NEED_LABELS[kume.need_type] || kume.need_type}</p>
+                      </div>
+                    </div>
+                    <div className="bg-slate-900/50 p-4 rounded-lg border border-slate-700/50">
+                      <p className="text-[10px] text-slate-400 uppercase font-bold tracking-widest mb-2">KONUM & ÖZET</p>
+                      <p className="text-sm leading-relaxed text-slate-300">
+                        📍 {adres} — {kume.request_count} ihbar kümelendi.
+                        Bekleyen: {kume.status_summary?.pending || 0} |
+                        Atanan: {kume.status_summary?.assigned || 0} |
+                        Çözülen: {kume.status_summary?.resolved || 0}
+                      </p>
+                    </div>
                   </div>
-                  <div className="flex-1 bg-slate-900/50 p-4 rounded-lg border border-slate-700/50 text-amber-500">
-                    <p className="text-[10px] uppercase font-bold tracking-widest mb-1 text-slate-400">KAYNAK İHTİYACI</p>
-                    <p className="text-2xl font-extrabold">STANDART</p>
-                  </div>
-                </div>
-                <div className="bg-slate-900/50 p-4 rounded-lg border border-slate-700/50">
-                  <p className="text-[10px] text-slate-400 uppercase font-bold tracking-widest mb-2">İHBAR ÖZETİ (AI ANALİZİ)</p>
-                  <p className="text-sm leading-relaxed text-slate-300">Su baskını ve elektrik kesintisi kaynaklı mahsur kalma vakaları. İtfaiye ekipleri bölgeye sevk edildi, destek bekleniyor.</p>
-                </div>
-              </div>
-              <div className="col-span-1 flex flex-col justify-between">
-                <div className="aspect-square bg-slate-950 rounded-lg border border-slate-700/50 relative overflow-hidden">
-                  <img alt="Cluster Map Uskudar" className="w-full h-full object-cover opacity-60" src="https://images.unsplash.com/photo-1518558997970-4fcd0e34c06f?q=80&w=400&auto=format&fit=crop" />
-                  <div className="absolute inset-0 flex items-center justify-center">
-                    <span className="material-symbols-outlined text-amber-500 text-4xl">location_on</span>
-                  </div>
-                </div>
-                <button className="w-full bg-slate-700 text-white py-3 rounded-xl font-bold mt-4 hover:bg-slate-600 transition-colors active:scale-95 flex items-center justify-center gap-2">
-                  <span className="material-symbols-outlined">send</span>
-                  EKİP YÖNLENDİR
-                </button>
-              </div>
-            </div>
-          </div>
 
+                  <div className="col-span-1 flex flex-col justify-between">
+                    <div className="bg-slate-900/50 p-4 rounded-lg border border-slate-700/50 space-y-2">
+                      <p className="text-[10px] text-slate-400 uppercase font-bold">Ort. Öncelik Puanı</p>
+                      <p className={`text-2xl font-extrabold ${c.text}`}>{kume.average_priority_score}</p>
+                      <p className="text-[10px] text-slate-500">{kume.is_noise_cluster ? '⚠ Dağınık Küme' : '✓ Yoğun Küme'}</p>
+                    </div>
+                    <button
+                      onClick={() => handleYonlendir(kume)}
+                      disabled={yonlendirilenId === kume.cluster_id}
+                      className={`w-full ${c.btn} text-white py-3 rounded-xl font-bold mt-4 transition-colors active:scale-95 flex items-center justify-center gap-2 disabled:opacity-60`}
+                    >
+                      <span className="material-symbols-outlined">send</span>
+                      {yonlendirilenId === kume.cluster_id ? 'GÖNDERİLDİ' : 'EKİP YÖNLENDİR'}
+                    </button>
+                  </div>
+                </div>
+              </div>
+            );
+          })}
         </div>
 
-        {/* SAĞ TARAF: DETAY ANALİZİ PANELI */}
+        {/* SAĞ PANEL */}
         <aside className="col-span-12 lg:col-span-4 space-y-6">
-          <div className="bg-slate-800 rounded-xl p-6 border border-slate-700 h-fit sticky top-6">
+          <div className="bg-slate-800 rounded-xl p-6 border border-slate-700 sticky top-6">
             <div className="flex items-center gap-2 mb-6">
               <span className="material-symbols-outlined text-blue-500">analytics</span>
               <h3 className="text-lg font-bold uppercase tracking-tight">KÜME DETAY ANALİZİ</h3>
             </div>
-            
-            <div className="space-y-6">
-              {/* Kaynak Doluluk Oranı */}
-              <div>
-                <div className="flex justify-between items-end mb-2">
-                  <label className="text-[10px] uppercase font-bold tracking-widest text-slate-400">KAYNAK DOLULUK ORANI</label>
-                  <span className="text-sm font-bold text-red-500">92%</span>
-                </div>
-                <div className="h-2 w-full bg-slate-900 rounded-full overflow-hidden">
-                  <div className="h-full bg-red-600 w-[92%]"></div>
-                </div>
+            <div className="grid grid-cols-2 gap-3 mb-6">
+              <div className="bg-slate-900/50 p-3 rounded-lg border border-slate-700/50">
+                <p className="text-[10px] text-slate-400 font-bold">TOPLAM KÜME</p>
+                <p className="text-xl font-bold text-white">{toplam}</p>
               </div>
-
-              {/* Bölgesel Duygu Analizi */}
-              <div>
-                <label className="text-[10px] uppercase font-bold tracking-widest text-slate-400 mb-3 block">BÖLGESEL DUYGU ANALİZİ</label>
-                <div className="flex flex-wrap gap-2">
-                  <span className="bg-red-500/10 text-red-500 text-[10px] font-bold px-3 py-1 rounded-full border border-red-500/20">PANİK: YÜKSEK</span>
-                  <span className="bg-amber-500/10 text-amber-500 text-[10px] font-bold px-3 py-1 rounded-full border border-amber-500/20">BELİRSİZLİK: ORTA</span>
-                  <span className="bg-blue-500/10 text-blue-500 text-[10px] font-bold px-3 py-1 rounded-full border border-blue-500/20">MOBİLİZASYON: AKTİF</span>
-                </div>
+              <div className="bg-slate-900/50 p-3 rounded-lg border border-slate-700/50">
+                <p className="text-[10px] text-slate-400 font-bold">KRİTİK</p>
+                <p className="text-xl font-bold text-red-500">{kritik}</p>
               </div>
-
-              <div className="h-[1px] bg-slate-700/50"></div>
-
-              {/* Metrikler (Bento) */}
-              <div className="grid grid-cols-2 gap-3">
-                <div className="bg-slate-900/50 p-3 rounded-lg border border-slate-700/50">
-                  <p className="text-[10px] text-slate-400 font-bold">AKTİF EKİP</p>
-                  <p className="text-xl font-bold text-blue-500">24</p>
-                </div>
-                <div className="bg-slate-900/50 p-3 rounded-lg border border-slate-700/50">
-                  <p className="text-[10px] text-slate-400 font-bold">BEKLEYEN</p>
-                  <p className="text-xl font-bold text-white">142</p>
-                </div>
-                <div className="bg-slate-900/50 p-3 rounded-lg border border-slate-700/50">
-                  <p className="text-[10px] text-slate-400 font-bold">ÇÖZÜLEN</p>
-                  <p className="text-xl font-bold text-white">12</p>
-                </div>
-                <div className="bg-slate-900/50 p-3 rounded-lg border border-slate-700/50">
-                  <p className="text-[10px] text-slate-400 font-bold">HAVA DURUMU</p>
-                  <div className="flex items-center gap-1 text-white">
-                    <span className="material-symbols-outlined text-sm">cloudy_snowing</span>
-                    <p className="text-sm font-bold">-2°C</p>
-                  </div>
-                </div>
+              <div className="bg-slate-900/50 p-3 rounded-lg border border-slate-700/50">
+                <p className="text-[10px] text-slate-400 font-bold">BEKLEYEN İHBAR</p>
+                <p className="text-xl font-bold text-white">{bekleyen}</p>
               </div>
-
-              {/* Son Aksiyonlar */}
-              <div>
-                <label className="text-[10px] uppercase font-bold tracking-widest text-slate-400 mb-3 block">SON SİSTEM AKSİYONLARI</label>
-                <div className="space-y-3">
-                  <div className="flex gap-3 text-xs border-l-2 border-blue-500 pl-3 py-1 text-slate-300">
-                    <span className="text-slate-500 font-mono">14:22</span>
-                    <p><span className="font-bold text-blue-400">TR-34-A1</span> için İtfaiye desteği onaylandı.</p>
-                  </div>
-                  <div className="flex gap-3 text-xs border-l-2 border-amber-500 pl-3 py-1 opacity-80 text-slate-300">
-                    <span className="text-slate-500 font-mono">14:18</span>
-                    <p><span className="font-bold">ÜSKÜDAR</span> kümesi için drone taraması başlatıldı.</p>
-                  </div>
-                  <div className="flex gap-3 text-xs border-l-2 border-slate-600 pl-3 py-1 opacity-50 text-slate-300">
-                    <span className="text-slate-500 font-mono">14:05</span>
-                    <p>Genel sistem yedeklemesi tamamlandı.</p>
-                  </div>
-                </div>
+              <div className="bg-slate-900/50 p-3 rounded-lg border border-slate-700/50">
+                <p className="text-[10px] text-slate-400 font-bold">ETKİLENEN KİŞİ</p>
+                <p className="text-xl font-bold text-white">{toplamKisi}</p>
               </div>
+            </div>
 
-              <button className="w-full py-3 bg-slate-900 text-white border border-slate-700 rounded-xl text-xs font-bold hover:bg-slate-800 transition-colors uppercase tracking-widest">
-                TAM RAPORU İNDİR (.PDF)
-              </button>
+            {/* Son kümeler listesi */}
+            <div>
+              <label className="text-[10px] uppercase font-bold tracking-widest text-slate-400 mb-3 block">AKTİF KÜMELER</label>
+              <div className="space-y-2 max-h-64 overflow-y-auto">
+                {kumeler.slice(0, 8).map(k => {
+                  const c = PRIORITY_COLORS[k.priority_level] || PRIORITY_COLORS['Düşük'];
+                  return (
+                    <div key={k.cluster_id} className={`flex gap-3 text-xs border-l-2 ${c.text.replace('text', 'border')} pl-3 py-1 text-slate-300`}>
+                      <span className={`font-bold ${c.text}`}>{k.priority_level}</span>
+                      <p className="truncate">{k.cluster_name}</p>
+                    </div>
+                  );
+                })}
+                {kumeler.length === 0 && !loading && (
+                  <p className="text-slate-500 text-xs">Küme bulunamadı.</p>
+                )}
+              </div>
             </div>
           </div>
         </aside>
 
       </div>
 
-      {/* SAĞ ALT YÜZEN BUTON */}
-      <div className="fixed bottom-8 right-8 flex flex-col items-end gap-3 z-50">
-        <div className="bg-red-900/80 backdrop-blur-sm text-red-100 px-4 py-2 rounded-lg text-[10px] font-bold uppercase tracking-widest shadow-2xl border border-red-500/30 mb-2 animate-bounce">
-          Kritik Bildirim: 3 Yeni Küme
-        </div>
-        <button className="w-16 h-16 bg-blue-600 text-white rounded-full shadow-2xl flex items-center justify-center hover:scale-110 active:scale-90 transition-all group relative">
-          <span className="material-symbols-outlined text-3xl" style={{ fontVariationSettings: "'FILL' 1" }}>add_alert</span>
-          <span className="absolute right-20 bg-slate-800 px-4 py-2 rounded-xl text-sm font-bold whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity border border-slate-700 pointer-events-none">
-            YENİ İHBAR OLUŞTUR
+      {/* YÜZEN BUTON */}
+      <div className="fixed bottom-8 right-8 z-50">
+        <button
+          onClick={handleGenerate}
+          disabled={generating}
+          className="w-16 h-16 bg-blue-600 text-white rounded-full shadow-2xl flex items-center justify-center hover:scale-110 active:scale-90 transition-all disabled:opacity-60"
+          title="Kümeleri Güncelle"
+        >
+          <span className="material-symbols-outlined text-3xl" style={{ fontVariationSettings: "'FILL' 1" }}>
+            {generating ? 'hourglass_empty' : 'add_alert'}
           </span>
         </button>
       </div>
-
     </div>
   );
 }
