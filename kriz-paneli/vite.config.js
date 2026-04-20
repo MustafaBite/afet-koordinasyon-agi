@@ -1,8 +1,9 @@
 import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react'
+import tailwindcss from '@tailwindcss/vite'
 
 export default defineConfig({
-  plugins: [react()],
+  plugins: [react(), tailwindcss()],
   
   server: {
     proxy: {
@@ -25,6 +26,22 @@ export default defineConfig({
         changeOrigin: true,
       },
       '/health': {
+        target: 'http://127.0.0.1:8000',
+        changeOrigin: true,
+      },
+      '/araclar': {
+        target: 'http://127.0.0.1:8000',
+        changeOrigin: true,
+      },
+      '/arac-ekle': {
+        target: 'http://127.0.0.1:8000',
+        changeOrigin: true,
+      },
+      '/assign-vehicle': {
+        target: 'http://127.0.0.1:8000',
+        changeOrigin: true,
+      },
+      '/buyuk-depremler': {
         target: 'http://127.0.0.1:8000',
         changeOrigin: true,
       }
