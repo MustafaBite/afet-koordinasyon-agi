@@ -1,20 +1,41 @@
 import requests
 import logging
+import time
 from datetime import datetime, timedelta
 
 logger = logging.getLogger(__name__)
 
-# Son bilinen deprem verisi — API çökerse bu kullanılır
+# ── TTL Cache ──────────────────────────────────────────────────────────────
+# Kandilli API'ye her ihbarda istek atmak yerine sonucu 60 saniye boyunca
+# bellekte tutuyoruz. Bu sayede 500 eş zamanlı kullanıcı geldiğinde
+# hepsi aynı dış API çağrısını beklemek yerine bellekten okur.
+CACHE_TTL_SECONDS = 60  # Kaç saniyede bir Kandilli'ye gerçek istek atılır
+
 _last_known_cache: list = []
+_cache_timestamp: float = 0.0   # Son başarılı çekimin unix timestamp'i
+
 
 def get_last_24h_earthquakes() -> list:
     """
     Kandilli API'den son 24 saatin deprem verilerini çeker.
-    - API çökerse veya yanıt vermezse son bilinen cache'i döner.
-    - 5.0+ büyüklüğündeki depremler is_major=True olarak işaretlenir ve listenin başına alınır.
-    """
-    global _last_known_cache
 
+    Performans İyileştirmesi (v2):
+    - Sonuçlar 60 saniye boyunca bellekte tutulur (TTL cache).
+    - Aynı 60 saniyelik pencerede gelen tüm istekler API'ye gitmez,
+      bellekten okur. Bu, yüksek yük altında dış API bağımlılığını ortadan kaldırır.
+    - API çökerse son bilinen cache döner (fallback).
+    - 5.0+ büyüklüğündeki depremler is_major=True olarak işaretlenir.
+    """
+    global _last_known_cache, _cache_timestamp
+
+    now = time.time()
+
+    # Cache geçerliyse direkt dön — Kandilli'ye istek atma
+    if _last_known_cache and (now - _cache_timestamp) < CACHE_TTL_SECONDS:
+        logger.debug(f"Cache hit — Kandilli API atlandı ({int(now - _cache_timestamp)}s önce güncellendi)")
+        return _last_known_cache
+
+    # Cache süresi dolmuş veya ilk çalışma — Kandilli'ye git
     url = "https://api.orhanaydogdu.com.tr/deprem/kandilli/live"
 
     try:
@@ -71,10 +92,14 @@ def get_last_24h_earthquakes() -> list:
     # Büyük depremler (5.0+) önce, sonra tarihe göre yeniden eskiye
     earthquakes.sort(key=lambda x: (not x["is_major"], x["date_time"]), reverse=False)
 
-    # Cache'i güncelle (başarılı çekimde)
+    # Cache'i güncelle
     if earthquakes:
         _last_known_cache = earthquakes
-        logger.info(f"{len(earthquakes)} deprem çekildi, {sum(1 for e in earthquakes if e['is_major'])} tanesi büyük (5.0+).")
+        _cache_timestamp = now
+        logger.info(
+            f"Kandilli cache güncellendi: {len(earthquakes)} deprem, "
+            f"{sum(1 for e in earthquakes if e['is_major'])} tanesi büyük (5.0+)."
+        )
 
     return earthquakes
 
