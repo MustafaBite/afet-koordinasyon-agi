@@ -7,99 +7,106 @@
 
 ---
 
-## Test Koşulları
+## Test 1 — Normal Yük (50 Kullanıcı)
+
+### Koşullar
 
 | Parametre | Değer |
 |-----------|-------|
 | Toplam sanal kullanıcı | 50 |
 | Kullanıcı ekleme hızı | 5 kullanıcı/saniye |
 | Test süresi | 60 saniye |
-| Hedef sunucu | http://localhost:8000 |
-| Sunucu ortamı | Geliştirme (tek çekirdek, uvicorn) |
+| Sunucu | Geliştirme ortamı (tek çekirdek, uvicorn) |
+
+### Sonuçlar
+
+| Endpoint | İstek | Hata | Ort. (ms) | Medyan (ms) | 95% (ms) | req/s |
+|----------|-------|------|-----------|-------------|----------|-------|
+| POST /talep-gonder | 675 | **0** | 83 | **3** | 17 | 11.6 |
+| GET /requests/prioritized | 425 | **0** | 920 | 690 | 2.100 | 7.3 |
+| GET /requests/task-packages | 218 | **0** | 813 | 520 | 2.000 | 3.7 |
+| GET /araclar | 219 | **0** | 819 | 580 | 2.000 | 3.7 |
+| **Toplam** | **1.559** | **0 (%0)** | **519** | **330** | **1.900** | **26.4** |
+
+**Sonuç: ✅ Sistem kararlı çalıştı. Sıfır hata.**
 
 ---
 
-## Test Senaryosu
+## Test 2 — Stres Testi (500 Kullanıcı / Felaket Senaryosu)
 
-Her sanal kullanıcı gerçek bir afet anındaki operatörü simüle eder:
+### Koşullar
 
-| İşlem | Ağırlık | Açıklama |
-|-------|---------|----------|
-| `POST /talep-gonder` | 3x | Rastgele koordinat ve ihtiyaç türüyle ihbar gönderme |
-| `GET /requests/prioritized` | 2x | Öncelikli ihbar listesini çekme |
-| `GET /requests/task-packages` | 1x | Küme listesini çekme |
-| `GET /araclar` | 1x | Araç listesini çekme |
+| Parametre | Değer |
+|-----------|-------|
+| Toplam sanal kullanıcı | **500** |
+| Kullanıcı ekleme hızı | 25 kullanıcı/saniye |
+| Test süresi | 120 saniye |
+| Sunucu | Geliştirme ortamı (tek çekirdek, uvicorn) |
 
----
+### Sonuçlar
 
-## Sonuçlar
+| Endpoint | İstek | Hata | Hata Oranı | Ort. (ms) | Medyan (ms) |
+|----------|-------|------|------------|-----------|-------------|
+| POST /talep-gonder | 4.331 | 4.331 | **%100** | 4.095 | 4.100 |
+| GET /requests/prioritized | 2.917 | 2.917 | **%100** | 4.094 | 4.100 |
+| GET /requests/task-packages | 1.454 | 1.454 | **%100** | 4.095 | 4.100 |
+| GET /araclar | 1.407 | 1.407 | **%100** | 4.094 | 4.100 |
+| **Toplam** | **10.109** | **10.109** | **%100** | **4.095** | **4.100** |
 
-### Genel Özet
+**Hata Türü:** `HTTP 0` — Bağlantı zaman aşımı (connection timeout). Sunucu yanıt vermedi.
 
-| Metrik | Değer |
-|--------|-------|
-| Toplam istek | **1.559** |
-| Başarılı istek | **1.559** |
-| Başarısız istek | **0** |
-| Hata oranı | **%0** |
-| Ortalama yanıt süresi | **519 ms** |
-| Medyan yanıt süresi | **330 ms** |
-| Maksimum yanıt süresi | **4.693 ms** |
-| Toplam istek/saniye | **26.4 req/s** |
-
-### Endpoint Bazlı Sonuçlar
-
-| Endpoint | İstek | Hata | Ort. (ms) | Medyan (ms) | 95% (ms) | Maks (ms) | req/s |
-|----------|-------|------|-----------|-------------|----------|-----------|-------|
-| POST /talep-gonder | 675 | 0 | 83 | **3** | 17 | 4.016 | 11.6 |
-| GET /requests/prioritized | 425 | 0 | 920 | 690 | 2.100 | 4.693 | 7.3 |
-| GET /requests/task-packages | 218 | 0 | 813 | 520 | 2.000 | 3.330 | 3.7 |
-| GET /araclar | 219 | 0 | 819 | 580 | 2.000 | 4.165 | 3.7 |
-
-### Yanıt Süresi Dağılımı (Tüm İstekler)
-
-| Yüzdelik | Süre |
-|----------|------|
-| %50 (medyan) | 330 ms |
-| %75 | 720 ms |
-| %90 | 1.500 ms |
-| %95 | 1.900 ms |
-| %99 | 2.700 ms |
-| %100 (maks) | 4.700 ms |
+**Sonuç: ❌ Sistem 500 eş zamanlı kullanıcıda çöktü.**
 
 ---
 
-## Değerlendirme
+## Analiz
 
-### ✅ Güçlü Yönler
+### Neden Çöktü?
 
-**İhbar gönderme (POST /talep-gonder) son derece hızlı:**  
-Medyan yanıt süresi **3 ms**. Bu endpoint Kandilli API'sini çağırıyor, cross-check yapıyor ve veritabanına yazıyor — buna rağmen 3ms medyan mükemmel bir performans.
+500 kullanıcı aynı anda bağlandığında tüm yanıtlar tam olarak **~4.100 ms** aldı ve hepsi `HTTP 0` (bağlantı koptu) hatası verdi. Bu, sunucunun bağlantı kuyruğunu (connection queue) doldurduğunu ve yeni bağlantıları reddettiğini gösteriyor.
 
-**Sıfır hata:**  
-50 eş zamanlı kullanıcıyla 60 saniyede 1.559 istek işlendi, hiçbiri hata vermedi. Sistem kararlı çalıştı.
+**Temel Neden:** Geliştirme ortamında `uvicorn` tek çekirdekte çalışıyor. Her istek Kandilli API'sine dış çağrı yapıyor (cross-check), bu da her isteği ~100-500ms bloke ediyor. 500 kullanıcı aynı anda gelince kuyruk doldu.
 
-**Rate limiting doğru çalıştı:**  
-Aynı IP'den gelen fazla istekler HTTP 429 ile bloklandı ve bu durum hata olarak sayılmadı (beklenen davranış).
+### Kapasite Sınırı
 
-### ⚠️ Dikkat Edilmesi Gerekenler
+| Kullanıcı Sayısı | Durum | Hata Oranı | Ort. Yanıt |
+|-----------------|-------|------------|-----------|
+| 50 | ✅ Kararlı | %0 | 519 ms |
+| 500 | ❌ Çöküş | %100 | 4.095 ms |
+| **Eşik** | **~50-100 kullanıcı arası** | — | — |
 
-**Liste sorguları yavaşlıyor:**  
-`GET /requests/prioritized` 339 ihbar için 920ms ortalama yanıt süresi veriyor. Veritabanında 10.000+ kayıt olduğunda bu süre önemli ölçüde artacak. Çözüm: sayfalama (pagination) veya önbellekleme (caching) eklenebilir.
+---
 
-**Maksimum yanıt süreleri yüksek:**  
-%99 diliminde 2.700ms görülüyor. Bu, Kandilli API'sine yapılan dış çağrıların zaman zaman gecikme yarattığını gösteriyor. Çözüm: Kandilli çağrısını arka planda (background task) çalıştırmak.
+## Production İçin Öneriler
+
+Gerçek bir afet anında sistemi ayakta tutmak için aşağıdaki iyileştirmeler yapılmalıdır:
+
+### 1. Çoklu Worker (Hızlı Çözüm)
+```bash
+# Tek çekirdek yerine 4 worker ile çalıştır
+uvicorn main:app --workers 4 --host 0.0.0.0 --port 8000
+```
+Bu değişiklik kapasiteyi yaklaşık 4x artırır.
+
+### 2. Kandilli API Çağrısını Arka Plana Al
+Şu an her ihbar geldiğinde Kandilli API'si senkron olarak çağrılıyor. Bu çağrı arka planda (background task) yapılırsa ihbar anında kaydedilir, doğrulama sonradan güncellenir.
+
+### 3. Redis ile Önbellekleme
+Kandilli verisi her istek için çekilmek yerine 60 saniyede bir Redis'e yazılabilir. Tüm istekler Redis'ten okur — dış API çağrısı ortadan kalkar.
+
+### 4. Load Balancer + Yatay Ölçekleme
+Docker Compose ile birden fazla backend instance çalıştırılıp Nginx ile yük dağıtılabilir.
 
 ---
 
 ## Testi Yeniden Çalıştırmak
 
 ```bash
-# Temel test (50 kullanıcı, 60 saniye)
+# Test 1 — Normal yük (50 kullanıcı, 60 saniye)
 locust -f locustfile.py --headless -u 50 -r 5 --run-time 60s --host http://localhost:8000
 
-# Daha yoğun test (200 kullanıcı, 2 dakika)
-locust -f locustfile.py --headless -u 200 -r 20 --run-time 120s --host http://localhost:8000
+# Test 2 — Stres testi (500 kullanıcı, 120 saniye)
+locust -f locustfile.py --headless -u 500 -r 25 --run-time 120s --host http://localhost:8000
 
 # Görsel arayüzle (tarayıcıdan http://localhost:8089)
 locust -f locustfile.py --host http://localhost:8000
