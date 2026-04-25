@@ -92,6 +92,22 @@ class Cluster(Base):
     disaster_requests = relationship("DisasterRequest", back_populates="cluster")
 
 
+class AnomalyEvent(Base):
+    __tablename__ = "anomaly_events"
+
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    event_type = Column(String, nullable=False)
+    device_key = Column(String, nullable=False)
+    ip_address = Column(String, nullable=False)
+    user_agent = Column(String, nullable=True)
+    request_path = Column(String, nullable=True)
+    action_taken = Column(String, nullable=False)
+    reason = Column(String, nullable=False)
+    observed_identifier = Column(String, nullable=True)
+    distinct_value_count = Column(Integer, nullable=True)
+    window_seconds = Column(Integer, nullable=True)
+    created_at = Column(DateTime(timezone=True), default=datetime.datetime.utcnow)
+
 
 class User(Base):
     __tablename__ = "app_users"

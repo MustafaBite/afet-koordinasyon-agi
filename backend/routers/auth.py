@@ -1,7 +1,7 @@
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, Request, status
 from fastapi.security import OAuth2PasswordBearer
 from sqlalchemy.orm import Session
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 import os
 
 # JWT ve şifreleme için gerekli importlar (kurulum gerekebilir)
@@ -14,6 +14,7 @@ except ImportError:
 import models
 import schemas
 from core.dependencies import get_db
+from services.anomaly_detection import guard_against_tc_rotation
 
 router = APIRouter(prefix="/auth", tags=["authentication"])
 
@@ -37,14 +38,20 @@ def get_password_hash(password):
 
 def create_access_token(data: dict):
     to_encode = data.copy()
-    expire = datetime.utcnow() + timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
+    expire = datetime.now(timezone.utc) + timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
     to_encode.update({"exp": expire})
     encoded_jwt = jwt.encode(to_encode, SECRET_KEY, algorithm=ALGORITHM)
     return encoded_jwt
 
 
 @router.post("/register", response_model=schemas.AuthResponse, status_code=status.HTTP_201_CREATED)
-def register(user_data: schemas.UserRegister, db: Session = Depends(get_db)):
+def register(
+    user_data: schemas.UserRegister,
+    request: Request,
+    db: Session = Depends(get_db),
+):
+    guard_against_tc_rotation(db, request, user_data.tc_identity_no)
+
     # E-posta kontrolü
     existing_user = db.query(models.User).filter(models.User.email == user_data.email).first()
     if existing_user:

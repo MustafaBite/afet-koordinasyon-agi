@@ -14,6 +14,7 @@ from notification_service import send_assignment_notification
 from live_earthquake_data import get_last_24h_earthquakes, get_major_earthquakes_last_3_months
 import models
 import schemas
+from services.request_intake import create_disaster_request
 
 # cache süresi
 cache = {
@@ -213,12 +214,8 @@ async def create_request(
     db: Session = Depends(get_db),
     _: None = Depends(check_rate_limit),
 ):
-    earthquakes = get_last_24h_earthquakes()
-    verified = is_near_earthquake(request_data.latitude, request_data.longitude, earthquakes)
-    db_request = models.DisasterRequest(**request_data.model_dump(), is_verified=verified)
-    db.add(db_request)
-    db.commit()
-    db.refresh(db_request)
+    intake_result = create_disaster_request(db, request_data)
+    db_request = intake_result.disaster_request
     await manager.broadcast({
         "event": "NEW_REQUEST",
         "data": {
@@ -226,20 +223,14 @@ async def create_request(
             "need_type": db_request.need_type,
             "latitude": db_request.latitude,
             "longitude": db_request.longitude,
-            "is_verified": verified,
+            "is_verified": intake_result.is_verified,
         }
     })
     return db_request
 
 
 def _create_request_sync(request_data: schemas.RequestCreate, db: Session):
-    earthquakes = get_last_24h_earthquakes()
-    verified = is_near_earthquake(request_data.latitude, request_data.longitude, earthquakes)
-    db_request = models.DisasterRequest(**request_data.model_dump(), is_verified=verified)
-    db.add(db_request)
-    db.commit()
-    db.refresh(db_request)
-    return db_request
+    return create_disaster_request(db, request_data).disaster_request
 
 
 @app.get(

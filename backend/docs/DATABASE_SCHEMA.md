@@ -87,6 +87,24 @@ DBSCAN ile oluşturulan talep kümeleri.
 | generated_at | TIMESTAMP | UTC |
 | assigned_team_id | UUID | FK → teams.id, nullable |
 
+### anomaly_events
+Supheli cihaz davranislari ve guvenlik audit kayitlari.
+
+| Kolon | Tip | Açıklama |
+|-------|-----|----------|
+| id | UUID | Primary key |
+| event_type | VARCHAR | Olay tipi, or. `register_multi_identity_spike` |
+| device_key | VARCHAR | `IP + User-Agent` tabanli cihaz anahtari |
+| ip_address | VARCHAR | Istek IP adresi |
+| user_agent | VARCHAR | Istek user-agent bilgisi |
+| request_path | VARCHAR | Olayin tetiklendigi endpoint |
+| action_taken | VARCHAR | blocked, logged vb. |
+| reason | VARCHAR | Audit aciklamasi |
+| observed_identifier | VARCHAR | Maskelenmis kimlik degeri |
+| distinct_value_count | INTEGER | Pencere icindeki benzersiz deger sayisi |
+| window_seconds | INTEGER | Kuralin calistigi zaman penceresi |
+| created_at | TIMESTAMP | UTC |
+
 ### teams
 Saha ekipleri.
 
@@ -112,7 +130,8 @@ Saha ekipleri.
 ## İş Akışı
 
 1. **Kullanıcı Kaydı** → app_users tablosuna eklenir
-2. **Talep Oluşturma** → disaster_requests tablosuna eklenir (status: pending)
-3. **Kümeleme** → Pending talepler DBSCAN ile kümelenir, clusters tablosuna yazılır
-4. **Takım Atama** → Coordinator bir kümeye takım atar (clusters.assigned_team_id)
-5. **Görev Tamamlama** → Talepler resolved olur, küme resolved olur
+2. **Supheli Kayit Denemesi** → anomaly_events tablosuna audit kaydi dusulur, istek bloke edilir
+3. **Talep Oluşturma** → disaster_requests tablosuna eklenir (status: pending)
+4. **Kümeleme** → Pending talepler DBSCAN ile kümelenir, yuk altinda hizli gorev paketi moduna da gecebilir
+5. **Takım Atama** → Coordinator bir kümeye takım atar (clusters.assigned_team_id)
+6. **Görev Tamamlama** → Talepler resolved olur, küme resolved olur
