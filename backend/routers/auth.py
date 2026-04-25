@@ -7,9 +7,9 @@ import os
 # JWT ve şifreleme için gerekli importlar (kurulum gerekebilir)
 try:
     from jose import JWTError, jwt
-    from passlib.context import CryptContext
+    import bcrypt
 except ImportError:
-    raise ImportError("Lütfen şu paketleri yükleyin: pip install python-jose[cryptography] passlib[bcrypt]")
+    raise ImportError("Lütfen şu paketleri yükleyin: pip install python-jose[cryptography] bcrypt")
 
 import models
 import schemas
@@ -17,8 +17,7 @@ from core.dependencies import get_db
 
 router = APIRouter(prefix="/auth", tags=["authentication"])
 
-# Şifre hashleme
-pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
+# JWT ayarları
 
 # JWT ayarları
 SECRET_KEY = os.getenv("SECRET_KEY", "your-secret-key-change-in-production")
@@ -29,11 +28,11 @@ oauth2_scheme = OAuth2PasswordBearer(tokenUrl="auth/login")
 
 
 def verify_password(plain_password, hashed_password):
-    return pwd_context.verify(plain_password, hashed_password)
+    return bcrypt.checkpw(plain_password.encode('utf-8'), hashed_password.encode('utf-8'))
 
 
 def get_password_hash(password):
-    return pwd_context.hash(password)
+    return bcrypt.hashpw(password.encode('utf-8'), bcrypt.gensalt()).decode('utf-8')
 
 
 def create_access_token(data: dict):

@@ -4,6 +4,7 @@
 import requests
 import json
 import sys
+import os
 
 BASE_URL = "http://localhost:8000"
 
@@ -140,6 +141,35 @@ def cleanup_test_user():
         print(f"[WARN] Cleanup failed: {e}")
 
 
+sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
+
+from routers.auth import get_password_hash, verify_password
+
+
+def test_password_hashing():
+    print("Testing password hashing logic...")
+    password = "MySecurePassword123!"
+    
+    # Hash oluşturma
+    hashed = get_password_hash(password)
+    print(f"Password: {password}")
+    print(f"Hashed: {hashed}")
+    
+    # Doğrulama (Başarılı durum)
+    is_valid = verify_password(password, hashed)
+    print(f"Verification (Correct password): {'PASS' if is_valid else 'FAIL'}")
+    
+    # Doğrulama (Yanlış durum)
+    is_invalid = verify_password("WrongPassword", hashed)
+    print(f"Verification (Wrong password): {'PASS' if not is_invalid else 'FAIL'}")
+    
+    if is_valid and not is_invalid:
+        print("\nSUCCESS: Password hashing and verification are working correctly with bcrypt!")
+        return True
+    else:
+        print("\nFAILURE: Password hashing or verification failed.")
+        return False
+
 if __name__ == "__main__":
     print("=" * 60)
     print("AUTHENTICATION API TEST SUITE")
@@ -149,7 +179,10 @@ if __name__ == "__main__":
         sys.exit(1)
     
     cleanup_test_user()
-    
+    success = test_password_hashing()
+    if not success:
+        sys.exit(1)
+
     token = test_register()
     if not token:
         print("\n[FAIL] Registration test failed. Stopping tests.")
@@ -169,4 +202,5 @@ if __name__ == "__main__":
     print("\n" + "=" * 60)
     print("ALL TESTS PASSED")
     print("=" * 60)
+
 
