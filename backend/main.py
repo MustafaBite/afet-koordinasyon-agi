@@ -15,6 +15,7 @@ from live_earthquake_data import get_last_24h_earthquakes, get_major_earthquakes
 from trust_scorer import calculate_trust_score
 import models
 import schemas
+from services.request_intake import create_disaster_request
 
 # cache süresi
 cache = {
@@ -231,21 +232,8 @@ async def create_request(
     db: Session = Depends(get_db),
     _: None = Depends(check_rate_limit),
 ):
-    earthquakes = get_last_24h_earthquakes()
-
-    # Güven skoru hesapla
-    trust = calculate_trust_score(
-        lat=request_data.latitude,
-        lon=request_data.longitude,
-        ip=request.client.host,
-        earthquakes=earthquakes,
-    )
-    verified = trust["is_verified"]
-
-    db_request = models.DisasterRequest(**request_data.model_dump(), is_verified=verified)
-    db.add(db_request)
-    db.commit()
-    db.refresh(db_request)
+    intake_result = create_disaster_request(db, request_data, client_ip=request.client.host)
+    db_request = intake_result.disaster_request
     await manager.broadcast({
         "event": "NEW_REQUEST",
         "data": {
@@ -253,30 +241,15 @@ async def create_request(
             "need_type": db_request.need_type,
             "latitude": db_request.latitude,
             "longitude": db_request.longitude,
-            "is_verified": verified,
-            "trust_score": trust["trust_score"],
+            "is_verified": intake_result.is_verified,
+            "trust_score": intake_result.trust_score,
         }
     })
     return db_request
 
 
 def _create_request_sync(request_data: schemas.RequestCreate, db: Session, client_ip: str = "unknown"):
-    earthquakes = get_last_24h_earthquakes()
-
-    # Güven skoru hesapla (IP analizi + konum tutarlılığı + sismik örtüşme)
-    trust = calculate_trust_score(
-        lat=request_data.latitude,
-        lon=request_data.longitude,
-        ip=client_ip,
-        earthquakes=earthquakes,
-    )
-    verified = trust["is_verified"]
-
-    db_request = models.DisasterRequest(**request_data.model_dump(), is_verified=verified)
-    db.add(db_request)
-    db.commit()
-    db.refresh(db_request)
-    return db_request
+    return create_disaster_request(db, request_data, client_ip=client_ip).disaster_request
 
 
 @app.get(

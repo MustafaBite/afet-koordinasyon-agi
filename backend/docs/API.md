@@ -25,6 +25,10 @@ http://localhost:8000
 ### POST /auth/register
 Yeni kullanıcı kaydı.
 
+**Guvenlik davranisi:**
+- Ayni cihazdan (`IP + User-Agent`) kisa surede 10 farkli `tc_identity_no` ile kayit denemesi gelirse istek `403` ile reddedilir.
+- Supheli denemeler `anomaly_events` audit kayitlarina yazilir.
+
 **Request:**
 ```json
 {
@@ -171,6 +175,11 @@ Bir talebin durumunu günceller.
 
 ### POST /requests/task-packages/generate
 Kümeleme algoritmasını çalıştırır ve sonuçları döndürür.
+
+**Graceful degradation:**
+- Bekleyen talep sayisi `100000+` olursa veya kompleks kumeleme guvenli sure butcesini asarsa sistem DBSCAN yerine hizli gorev paketi moduna gecer.
+- Hızlı mod yine ayni response seklini dondurur, ancak sonuc listesi en acil gorevleri temsil eden yalniz gorev paketlerinden olusur.
+- Overload modunda en fazla `500` hizli gorev paketi materialize edilir.
 
 **Response (201):** Oluşturulan kümelerin listesi.
 

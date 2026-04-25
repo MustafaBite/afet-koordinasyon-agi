@@ -158,8 +158,8 @@ export default function Kalibrasyonlar() {
           🎚️ Puanlama Kalibrasyonu
         </h1>
         <p className="text-sm text-slate-400">
-          Sprint 5.6 — Aciliyet algoritmasını farklı senaryolarda test et ve
-          ağırlıkları doğrula
+          Aciliyet algoritmasını farklı senaryolarda test et ve ağırlıkları
+          doğrula
         </p>
       </div>
 

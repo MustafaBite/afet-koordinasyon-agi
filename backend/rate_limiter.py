@@ -29,6 +29,16 @@ def get_client_ip(request: Request) -> str:
     return request.client.host
 
 
+def get_client_user_agent(request: Request) -> str:
+    """İstemcinin user-agent değerini normalize eder."""
+    return (request.headers.get("User-Agent") or "unknown").strip()[:255]
+
+
+def get_device_key(request: Request) -> str:
+    """IP + User-Agent kombinasyonundan kaba bir cihaz anahtarı üretir."""
+    return f"{get_client_ip(request)}|{get_client_user_agent(request)}"
+
+
 def check_rate_limit(request: Request) -> None:
     """
     FastAPI Depends() ile endpoint'lere eklenir.

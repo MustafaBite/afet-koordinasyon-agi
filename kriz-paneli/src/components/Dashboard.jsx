@@ -157,7 +157,7 @@ export default function Dashboard() {
         </div>
       )}
 
-      {/* AI ROTA KAYDIRMA UYARILARI (Sprint 5.5 — Override) */}
+      {/* AI ROTA KAYDIRMA UYARILARI */}
       <OverrideAlertPanel
         onLocate={(lat, lon) => konumaGit(lat, lon)}
         onOverrideExecuted={() => {

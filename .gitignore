@@ -228,3 +228,6 @@ build/
 # OS
 .DS_Store
 Thumbs.db
+
+.cursor/
+memory-bank/

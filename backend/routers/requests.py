@@ -1,31 +1,28 @@
-from fastapi import APIRouter, Depends, HTTPException, Query
+from fastapi import APIRouter, Depends, HTTPException, Query, Request
 from sqlalchemy.orm import Session
 from typing import List
 from uuid import UUID
 
 import models
 import schemas
-from database import SessionLocal
+from core.dependencies import get_db
+from rate_limiter import check_rate_limit
 from services.priority import calculate_dynamic_priority
+from services.request_intake import create_disaster_request
 
-#router = APIRouter(prefix="/requests", tags=["requests"]) // bu silinicek 
+#router = APIRouter(prefix="/requests", tags=["requests"]) // bu silinicek
 router = APIRouter(tags=["requests"])
-
-def get_db():
-    db = SessionLocal()
-    try:
-        yield db
-    finally:
-        db.close()
 
 
 @router.post("", response_model=schemas.RequestResponse, status_code=201)
-def create_request(body: schemas.RequestCreate, db: Session = Depends(get_db)):
-    req = models.DisasterRequest(**body.model_dump())
-    db.add(req)
-    db.commit()
-    db.refresh(req)
-    return req
+def create_request(
+    body: schemas.RequestCreate,
+    request: Request,
+    db: Session = Depends(get_db),
+    _: None = Depends(check_rate_limit),
+):
+    result = create_disaster_request(db, body)
+    return result.disaster_request
 
 
 @router.get("/prioritized", response_model=List[schemas.PrioritizedRequestResponse])
