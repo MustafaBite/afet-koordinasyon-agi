@@ -29,7 +29,6 @@ jobs:
         run: npm run build
 
       - name: Deploy to Vercel
-        working-directory: kriz-paneli
         run: npx vercel --prod --yes --token=${{ secrets.VERCEL_TOKEN }}
         env:
           VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
