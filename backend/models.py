@@ -1,4 +1,4 @@
-from sqlalchemy import Boolean, Column, String, Float, DateTime, Integer, Enum, ForeignKey
+from sqlalchemy import Boolean, Column, String, Float, DateTime, Integer, Enum, ForeignKey, ARRAY
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import relationship
 from database import Base
@@ -36,7 +36,9 @@ class DisasterRequest(Base):
     status = Column(Enum(RequestStatus), default=RequestStatus.pending, nullable=False)
     created_at = Column(DateTime(timezone=True), default=datetime.datetime.utcnow)
     is_verified = Column(Boolean, default=False)
-    
+    photo_urls = Column(ARRAY(String), default=list, nullable=True)
+    audio_url = Column(String, nullable=True)
+
     created_by_user_id = Column(UUID(as_uuid=True), ForeignKey('app_users.id'), nullable=True)
     cluster_id = Column(UUID(as_uuid=True), ForeignKey('clusters.id'), nullable=True)
     

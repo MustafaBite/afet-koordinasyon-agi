@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, HTTPException, Query, Request
+from fastapi import APIRouter, Depends, HTTPException, Query, Request, UploadFile, File
 from sqlalchemy.orm import Session
 from typing import List
 from uuid import UUID
@@ -9,6 +9,7 @@ from core.dependencies import get_db, get_current_user, get_optional_user, requi
 from rate_limiter import check_rate_limit
 from services.priority import calculate_dynamic_priority
 from services.request_intake import create_disaster_request
+from services.storage import upload_file
 
 router = APIRouter(tags=["requests"])
 
@@ -132,6 +133,54 @@ def reject_request(request_id: UUID, db: Session = Depends(get_db), _: models.Us
     db.delete(req)
     db.commit()
     return {"durum": "başarılı", "mesaj": "İhbar silindi."}
+
+
+@router.post("/{request_id}/photos")
+async def upload_photos(
+    request_id: UUID,
+    files: List[UploadFile] = File(...),
+    db: Session = Depends(get_db),
+    current_user: models.User = Depends(get_current_user),
+):
+    """
+    Bir ihbara ait fotoğraf/ses dosyalarını Supabase Storage'a yükler.
+    Yüklenen public URL'ler DB'de photo_urls/audio_url alanına eklenir.
+    """
+    req = db.query(models.DisasterRequest).filter(
+        models.DisasterRequest.id == request_id
+    ).first()
+    if not req:
+        raise HTTPException(status_code=404, detail="İhbar bulunamadı")
+
+    if len(files) > 5:
+        raise HTTPException(status_code=400, detail="En fazla 5 dosya yüklenebilir")
+
+    new_photo_urls = list(req.photo_urls or [])
+    new_audio_url = req.audio_url
+
+    for file in files:
+        content = await file.read()
+        content_type = file.content_type or "application/octet-stream"
+
+        is_audio = content_type.startswith("audio/")
+        folder = "audio" if is_audio else "photos"
+        public_url = upload_file(content, content_type, folder=folder)
+
+        if is_audio:
+            new_audio_url = public_url
+        else:
+            new_photo_urls.append(public_url)
+
+    req.photo_urls = new_photo_urls
+    req.audio_url = new_audio_url
+    db.commit()
+    db.refresh(req)
+
+    return {
+        "request_id": str(req.id),
+        "photo_urls": req.photo_urls,
+        "audio_url": req.audio_url,
+    }
 
 
 @router.get("/istatistikler")
