@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { USER_ROLES } from '../constants/formOptions';
+import { apiFetch } from '../services/apiFetch';
 
 const ROLE_TABS = {
   admin:       ['aktif', 'kumeler', 'harita', 'ekipler', 'kalibrasyon', 'dogrulanmamislar'],
@@ -14,18 +15,18 @@ export default function Sidebar({ isOpen, activeTab, setActiveTab, user }) {
   const [dogrulanmamisSayi, setDogrulanmamisSayi] = useState(null);
 
   useEffect(() => {
-    fetch('/requests/prioritized')
+    apiFetch('/api/ihbarlar/prioritized')
       .then(r => r.ok ? r.json() : [])
       .then(data => {
         const sayi = Array.isArray(data) ? data.filter(i => !i.is_verified).length : 0;
         setDogrulanmamisSayi(sayi);
       })
       .catch(() => setDogrulanmamisSayi(null));
-  }, [activeTab]); // sekme değişince yenile
+  }, [activeTab]);
   
   
-  const userName = user ? `${user.first_name} ${user.last_name}` : 'Ahmet Yılmaz';
-  const userRole = user && user.role && USER_ROLES ? USER_ROLES[user.role] : 'Saha Koordinatörü';
+  const userName = user ? `${user.first_name} ${user.last_name}` : 'Kullanıcı';
+  const userRole = user && user.role && USER_ROLES ? USER_ROLES[user.role] : '—';
   const userPhoto = user?.profile_photo_url || `https://ui-avatars.com/api/?name=${encodeURIComponent(userName)}&background=2563eb&color=fff&bold=true`;
 
  

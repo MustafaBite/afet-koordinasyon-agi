@@ -4,17 +4,11 @@
   "installCommand": "npm ci",
   "rewrites": [
     { "source": "/auth/:path*", "destination": "https://afet-koordinasyon-agi.onrender.com/auth/:path*" },
-    { "source": "/talepler/:path*", "destination": "https://afet-koordinasyon-agi.onrender.com/talepler/:path*" },
-    { "source": "/talepler", "destination": "https://afet-koordinasyon-agi.onrender.com/talepler" },
+    { "source": "/api/:path*",  "destination": "https://afet-koordinasyon-agi.onrender.com/api/:path*" },
     { "source": "/requests/:path*", "destination": "https://afet-koordinasyon-agi.onrender.com/requests/:path*" },
-    { "source": "/requests", "destination": "https://afet-koordinasyon-agi.onrender.com/requests" },
-    { "source": "/buyuk-depremler", "destination": "https://afet-koordinasyon-agi.onrender.com/buyuk-depremler" },
-    { "source": "/health", "destination": "https://afet-koordinasyon-agi.onrender.com/health" },
-    { "source": "/araclar", "destination": "https://afet-koordinasyon-agi.onrender.com/araclar" },
-    { "source": "/arac-ekle", "destination": "https://afet-koordinasyon-agi.onrender.com/arac-ekle" },
-    { "source": "/assign-vehicle", "destination": "https://afet-koordinasyon-agi.onrender.com/assign-vehicle" },
-    { "source": "/ws", "destination": "https://afet-koordinasyon-agi.onrender.com/ws" },
-    { "source": "/api/:path*", "destination": "https://afet-koordinasyon-agi.onrender.com/api/:path*" },
-    { "source": "/:path*", "destination": "/index.html" }
+    { "source": "/requests",   "destination": "https://afet-koordinasyon-agi.onrender.com/requests" },
+    { "source": "/health",     "destination": "https://afet-koordinasyon-agi.onrender.com/health" },
+    { "source": "/ws",         "destination": "https://afet-koordinasyon-agi.onrender.com/ws" },
+    { "source": "/:path*",     "destination": "/index.html" }
   ]
 }

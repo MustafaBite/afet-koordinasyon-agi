@@ -62,7 +62,7 @@ export default function Kumeler() {
   const handleYonlendir = async (kume) => {
     // Araç listesini çek, modal aç
     try {
-      const r = await apiFetch('/araclar');
+      const r = await apiFetch('/api/vehicles');
       const data = await r.json();
       setAraclar(data);
     } catch {

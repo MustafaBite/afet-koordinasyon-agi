@@ -52,12 +52,13 @@ export default function Dashboard() {
   const [clusters, setClusters] = useState([]);
   const [musaitAraclar, setMusaitAraclar] = useState([]);
   const [araclarLoading, setAraclarLoading] = useState(false);
+  const [atamaFeedback, setAtamaFeedback] = useState(null); // { type: 'success'|'error', msg: string }
 
   // --- API VERİ ÇEKME ---
   const fetchData = useCallback(async () => {
     try {
       const [reqRes, clusterRes] = await Promise.all([
-        apiFetch('/talepler/oncelikli'),
+        apiFetch('/api/ihbarlar/prioritized'),
         apiFetch('/requests/task-packages')
       ]);
       if (!reqRes.ok) throw new Error(`HTTP ${reqRes.status}`);
@@ -147,15 +148,17 @@ export default function Dashboard() {
     try {
       const res = await apiFetch(`/requests/task-packages/${secilenGorev.cluster_id}/assign-vehicle?vehicle_id=${arac.vehicle_id}`, { method: 'POST' });
       if (res.ok) {
-        alert(`${arac.vehicle_type || 'Araç'} başarıyla görevlendirildi!`);
         setIsModalOpen(false);
+        setAtamaFeedback({ type: 'success', msg: `${arac.vehicle_type || 'Araç'} başarıyla görevlendirildi.` });
+        fetchData();
       } else {
-         const data = await res.json();
-         alert(`Hata: ${data.detail || 'Görevlendirilemedi'}`);
+        const data = await res.json();
+        setAtamaFeedback({ type: 'error', msg: `Hata: ${data.detail || 'Görevlendirilemedi'}` });
       }
-    } catch(e) {
-       alert("Bağlantı hatası oluştu.");
+    } catch {
+      setAtamaFeedback({ type: 'error', msg: 'Bağlantı hatası oluştu.' });
     }
+    setTimeout(() => setAtamaFeedback(null), 4000);
   };
 
   
@@ -164,7 +167,18 @@ export default function Dashboard() {
 
   return (
     <div className="flex-1 overflow-y-auto p-8 space-y-8 relative bg-zinc-900">
-      
+
+      {/* ARAÇ ATAMA FEEDBACK */}
+      {atamaFeedback && (
+        <div className={`fixed top-6 right-6 z-[10000] px-5 py-3 rounded-xl text-sm font-bold shadow-2xl border transition-all ${
+          atamaFeedback.type === 'success'
+            ? 'bg-green-500/10 border-green-500/30 text-green-400'
+            : 'bg-red-500/10 border-red-500/30 text-red-400'
+        }`}>
+          {atamaFeedback.msg}
+        </div>
+      )}
+
       {/* İstatistik Kartları */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
         <div className="bg-white dark:bg-slate-900 p-6 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-800">

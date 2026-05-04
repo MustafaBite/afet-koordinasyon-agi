@@ -113,7 +113,7 @@ export default function Ekipler() {
 
   const fetchAraclar = async () => {
     try {
-      const r = await apiFetch('/araclar');
+      const r = await apiFetch('/api/vehicles');
       if (!r.ok) throw new Error(`HTTP ${r.status}`);
       const data = await r.json();
       setAraclar(data);
@@ -165,7 +165,7 @@ export default function Ekipler() {
     }
     setKaydediliyor(true);
     try {
-      const r = await apiFetch('/arac-ekle', {
+      const r = await apiFetch('/api/vehicles/', {
         method: 'POST',
         body: JSON.stringify({
           plate_number: plateNumber,
