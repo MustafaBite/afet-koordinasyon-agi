@@ -1,5 +1,5 @@
 import 'leaflet/dist/leaflet.css';
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { MapContainer, TileLayer, Marker, Popup, useMap } from 'react-leaflet';
 import L from 'leaflet';
 import OverrideAlertPanel from './OverrideAlertPanel';
@@ -53,36 +53,71 @@ export default function Dashboard() {
   const [musaitAraclar, setMusaitAraclar] = useState([]);
   const [araclarLoading, setAraclarLoading] = useState(false);
 
-  // --- API VERİ ÇEKME---
-  useEffect(() => {
-    const fetchData = async () => {
-      try {
-        const [reqRes, clusterRes] = await Promise.all([
-          apiFetch('/talepler/oncelikli'),
-          apiFetch('/requests/task-packages')
-        ]);
-        
-        if (!reqRes.ok) throw new Error(`HTTP ${reqRes.status}`);
-        
-        const reqData = await reqRes.json();
-        setIhbarlar(reqData);
-
-        if (clusterRes.ok) {
-          const clusterData = await clusterRes.json();
-          setClusters(clusterData);
-        }
-        
-        setLoading(false);
-      } catch (e) {
-        setError(e.message);
-        setLoading(false);
+  // --- API VERİ ÇEKME ---
+  const fetchData = useCallback(async () => {
+    try {
+      const [reqRes, clusterRes] = await Promise.all([
+        apiFetch('/talepler/oncelikli'),
+        apiFetch('/requests/task-packages')
+      ]);
+      if (!reqRes.ok) throw new Error(`HTTP ${reqRes.status}`);
+      const reqData = await reqRes.json();
+      setIhbarlar(reqData);
+      if (clusterRes.ok) {
+        const clusterData = await clusterRes.json();
+        setClusters(clusterData);
       }
-    };
-    
-    fetchData();
-    const interval = setInterval(fetchData, 3000); // 3 saniyede bir canlı günceller
-    return () => clearInterval(interval);
+      setLoading(false);
+    } catch (e) {
+      setError(e.message);
+      setLoading(false);
+    }
   }, []);
+
+  const wsRef = useRef(null);
+  const reconnectTimerRef = useRef(null);
+  const pollingRef = useRef(null);
+
+  useEffect(() => {
+    const startPolling = () => {
+      if (pollingRef.current) return;
+      pollingRef.current = setInterval(fetchData, 10000);
+    };
+    const stopPolling = () => {
+      if (pollingRef.current) { clearInterval(pollingRef.current); pollingRef.current = null; }
+    };
+
+    const connectWS = () => {
+      const proto = window.location.protocol === 'https:' ? 'wss' : 'ws';
+      const ws = new WebSocket(`${proto}://${window.location.host}/ws`);
+      wsRef.current = ws;
+
+      ws.onopen = () => stopPolling();
+
+      ws.onmessage = (e) => {
+        try {
+          const msg = JSON.parse(e.data);
+          if (msg.event === 'NEW_REQUEST' || msg.event === 'SWARM_STARTED') fetchData();
+        } catch (_) {}
+      };
+
+      ws.onclose = () => {
+        startPolling();
+        reconnectTimerRef.current = setTimeout(connectWS, 3000);
+      };
+
+      ws.onerror = () => ws.close();
+    };
+
+    fetchData();
+    connectWS();
+
+    return () => {
+      if (wsRef.current) wsRef.current.close();
+      if (reconnectTimerRef.current) clearTimeout(reconnectTimerRef.current);
+      if (pollingRef.current) clearInterval(pollingRef.current);
+    };
+  }, [fetchData]);
 
   const konumaGit = (lat, lng) => setFlyTo([lat, lng]);
 

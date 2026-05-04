@@ -5,13 +5,13 @@ from uuid import UUID
 
 import models
 import schemas
-from core.dependencies import get_db
+from core.dependencies import get_db, require_coordinator, require_admin
 
 router = APIRouter(prefix="/api/vehicles", tags=["vehicles"])
 
 
 @router.post("/", response_model=schemas.VehicleResponse, status_code=status.HTTP_201_CREATED)
-def create_vehicle(vehicle: schemas.VehicleCreate, db: Session = Depends(get_db)):
+def create_vehicle(vehicle: schemas.VehicleCreate, db: Session = Depends(get_db), _: models.User = Depends(require_coordinator)):
     """Yeni araç ekle"""
     new_vehicle = models.ReliefVehicle(**vehicle.model_dump())
     db.add(new_vehicle)
@@ -36,7 +36,7 @@ def get_vehicle(vehicle_id: UUID, db: Session = Depends(get_db)):
 
 
 @router.put("/{vehicle_id}", response_model=schemas.VehicleResponse)
-def update_vehicle(vehicle_id: UUID, data: schemas.VehicleUpdate, db: Session = Depends(get_db)):
+def update_vehicle(vehicle_id: UUID, data: schemas.VehicleUpdate, db: Session = Depends(get_db), _: models.User = Depends(require_coordinator)):
     """Araç bilgilerini güncelle"""
     vehicle = db.query(models.ReliefVehicle).filter(models.ReliefVehicle.id == vehicle_id).first()
     if not vehicle:
@@ -51,7 +51,7 @@ def update_vehicle(vehicle_id: UUID, data: schemas.VehicleUpdate, db: Session = 
 
 
 @router.delete("/{vehicle_id}", status_code=status.HTTP_204_NO_CONTENT)
-def delete_vehicle(vehicle_id: UUID, db: Session = Depends(get_db)):
+def delete_vehicle(vehicle_id: UUID, db: Session = Depends(get_db), _: models.User = Depends(require_admin)):
     """Aracı sil"""
     vehicle = db.query(models.ReliefVehicle).filter(models.ReliefVehicle.id == vehicle_id).first()
     if not vehicle:

@@ -7,7 +7,7 @@ from datetime import datetime, timezone, timedelta
 import schemas
 from models import Cluster, ClusterStatus, ReliefVehicle
 from constants import VehicleStatus
-from core.dependencies import get_db
+from core.dependencies import get_db, require_coordinator
 from services.clustering import run_clustering
 from services.vehicle_recommendation import recommend_vehicles, NEED_TO_STOCK_FIELD
 from services.override_detector import detect_override_opportunities
@@ -45,7 +45,7 @@ def _cluster_to_response(c: Cluster) -> dict:
 
 
 @router.post("/generate", response_model=List[schemas.TaskPackageResponse], status_code=201)
-def generate_task_packages(db: Session = Depends(get_db)):
+def generate_task_packages(db: Session = Depends(get_db), _=Depends(require_coordinator)):
     """Kümelemeyi çalıştırır, sonuçları DB'ye yazar ve döndürür."""
     clusters = run_clustering(db)
     return [_cluster_to_response(c) for c in clusters]
@@ -114,6 +114,7 @@ def get_override_alerts(db: Session = Depends(get_db)):
 def execute_override(
     payload: schemas.ExecuteOverrideRequest,
     db: Session = Depends(get_db),
+    _=Depends(require_coordinator),
 ):
     """
     Yetkilinin onayı ile bir aracı yeni kümeye yönlendirir.

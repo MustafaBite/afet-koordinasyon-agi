@@ -5,7 +5,7 @@ from uuid import UUID
 
 import models
 import schemas
-from core.dependencies import get_db, get_current_user, get_optional_user
+from core.dependencies import get_db, get_current_user, get_optional_user, require_coordinator
 from rate_limiter import check_rate_limit
 from services.priority import calculate_dynamic_priority
 from services.request_intake import create_disaster_request
@@ -109,7 +109,7 @@ def get_dogrulanmamis_ihbarlar(
 
 
 @router.post("/{request_id}/dogrula")
-def verify_request(request_id: UUID, db: Session = Depends(get_db)):
+def verify_request(request_id: UUID, db: Session = Depends(get_db), _: models.User = Depends(require_coordinator)):
     """İhbarı doğrulanmış olarak işaretler."""
     req = db.query(models.DisasterRequest).filter(
         models.DisasterRequest.id == request_id
@@ -122,7 +122,7 @@ def verify_request(request_id: UUID, db: Session = Depends(get_db)):
 
 
 @router.post("/{request_id}/reddet")
-def reject_request(request_id: UUID, db: Session = Depends(get_db)):
+def reject_request(request_id: UUID, db: Session = Depends(get_db), _: models.User = Depends(require_coordinator)):
     """İhbarı reddeder ve siler."""
     req = db.query(models.DisasterRequest).filter(
         models.DisasterRequest.id == request_id

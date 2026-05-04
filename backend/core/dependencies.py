@@ -61,6 +61,30 @@ def get_current_user(
     return kullanici
 
 
+def require_coordinator(
+    current_user=Depends(get_current_user),
+):
+    """Koordinatör veya yönetici rolü zorunlu."""
+    if current_user.role not in ("coordinator", "admin"):
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Koordinatör veya yönetici rolü gereklidir",
+        )
+    return current_user
+
+
+def require_admin(
+    current_user=Depends(get_current_user),
+):
+    """Yalnızca yönetici rolü kabul edilir."""
+    if current_user.role != "admin":
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Yönetici rolü gereklidir",
+        )
+    return current_user
+
+
 def get_optional_user(
     token: str | None = Depends(oauth2_scheme_optional),
     db: Session = Depends(get_db),
