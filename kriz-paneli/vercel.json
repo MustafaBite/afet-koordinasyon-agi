@@ -1,0 +1,20 @@
+{
+  "buildCommand": "npm run build",
+  "outputDirectory": "dist",
+  "installCommand": "npm ci",
+  "rewrites": [
+    { "source": "/auth/:path*", "destination": "https://BACKEND_URL_BURAYA_YAZ/auth/:path*" },
+    { "source": "/talepler/:path*", "destination": "https://BACKEND_URL_BURAYA_YAZ/talepler/:path*" },
+    { "source": "/talepler", "destination": "https://BACKEND_URL_BURAYA_YAZ/talepler" },
+    { "source": "/requests/:path*", "destination": "https://BACKEND_URL_BURAYA_YAZ/requests/:path*" },
+    { "source": "/requests", "destination": "https://BACKEND_URL_BURAYA_YAZ/requests" },
+    { "source": "/buyuk-depremler", "destination": "https://BACKEND_URL_BURAYA_YAZ/buyuk-depremler" },
+    { "source": "/health", "destination": "https://BACKEND_URL_BURAYA_YAZ/health" },
+    { "source": "/araclar", "destination": "https://BACKEND_URL_BURAYA_YAZ/araclar" },
+    { "source": "/arac-ekle", "destination": "https://BACKEND_URL_BURAYA_YAZ/arac-ekle" },
+    { "source": "/assign-vehicle", "destination": "https://BACKEND_URL_BURAYA_YAZ/assign-vehicle" },
+    { "source": "/ws", "destination": "https://BACKEND_URL_BURAYA_YAZ/ws" },
+    { "source": "/api/:path*", "destination": "https://BACKEND_URL_BURAYA_YAZ/api/:path*" },
+    { "source": "/:path*", "destination": "/index.html" }
+  ]
+}
