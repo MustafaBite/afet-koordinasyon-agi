@@ -7,13 +7,11 @@ export default defineConfig({
   
   server: {
     proxy: {
-      '/auth': {
-        target: 'http://127.0.0.1:8000', // localhost yerine 127.0.0.1 kullandık
+      '/api': {
+        target: 'http://127.0.0.1:8000',
         changeOrigin: true,
-        // EĞER PYTHON TARAFINDA ADRES SADECE "/login" İSE ŞU SATIRIN BAŞINDAKİ // İŞARETLERİNİ KALDIR:
-        // rewrite: (path) => path.replace(/^\/auth/, '')
       },
-      '/talepler': {
+      '/auth': {
         target: 'http://127.0.0.1:8000',
         changeOrigin: true,
       },
@@ -21,30 +19,15 @@ export default defineConfig({
         target: 'http://127.0.0.1:8000',
         changeOrigin: true,
       },
-      '/buyuk-depremler': {
-        target: 'http://127.0.0.1:8000',
-        changeOrigin: true,
-      },
       '/health': {
         target: 'http://127.0.0.1:8000',
         changeOrigin: true,
       },
-      '/araclar': {
-        target: 'http://127.0.0.1:8000',
+      '/ws': {
+        target: 'ws://127.0.0.1:8000',
+        ws: true,
         changeOrigin: true,
       },
-      '/arac-ekle': {
-        target: 'http://127.0.0.1:8000',
-        changeOrigin: true,
-      },
-      '/assign-vehicle': {
-        target: 'http://127.0.0.1:8000',
-        changeOrigin: true,
-      },
-      '/buyuk-depremler': {
-        target: 'http://127.0.0.1:8000',
-        changeOrigin: true,
-      }
     }
   }
 })
