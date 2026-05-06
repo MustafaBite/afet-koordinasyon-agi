@@ -53,9 +53,13 @@ def create_disaster_request(
         earthquakes=earthquakes,
     )
 
+    initial_status = (
+        models.RequestStatus.active if trust["is_verified"] else models.RequestStatus.pending
+    )
     db_request = models.DisasterRequest(
         **payload.model_dump(),
         is_verified=trust["is_verified"],
+        status=initial_status,
         created_by_user_id=created_by_user_id,
     )
     db.add(db_request)

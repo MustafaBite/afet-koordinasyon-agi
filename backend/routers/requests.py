@@ -119,6 +119,8 @@ def verify_request(request_id: UUID, db: Session = Depends(get_db), _: models.Us
     if not req:
         raise HTTPException(status_code=404, detail="İhbar bulunamadı")
     req.is_verified = True
+    if req.status == models.RequestStatus.pending:
+        req.status = models.RequestStatus.active
     db.commit()
     return {"durum": "başarılı", "mesaj": "İhbar doğrulandı."}
 
