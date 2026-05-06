@@ -19,6 +19,11 @@
     },
     "android": {
       "package": "com.resq.afetkoordinasyon",
+      "config": {
+        "googleMaps": {
+          "apiKey": "AIzaSyDzpTamRX7LJRD4qgb2o_nkjIMGyZyclSY"
+        }
+      },
       "adaptiveIcon": {
         "backgroundColor": "#E6F4FE",
         "foregroundImage": "./assets/images/android-icon-foreground.png",

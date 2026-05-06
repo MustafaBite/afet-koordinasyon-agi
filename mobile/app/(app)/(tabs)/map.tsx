@@ -1,6 +1,7 @@
 import { View, Text, ActivityIndicator } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import MapView, { Marker, PROVIDER_GOOGLE } from "react-native-maps";
+import { Platform } from "react-native";
 import { ScreenHeader } from "@/src/components/ui";
 import { useClusters } from "@/src/hooks/useClusters";
 import { useVehicles } from "@/src/hooks/useVehicles";
@@ -33,7 +34,7 @@ export default function MapScreen() {
         ) : (
           <MapView
             style={{ flex: 1 }}
-            provider={PROVIDER_GOOGLE}
+            provider={Platform.OS === "android" ? PROVIDER_GOOGLE : undefined}
             initialRegion={{
               latitude: 37.0660,
               longitude: 37.3781, // Defaulting to Gaziantep for demo
