@@ -12,6 +12,7 @@ import Register from './pages/Register';
 import Profile from './pages/Profile';
 import Kalibrasyonlar from './pages/Kalibrasyonlar';
 import { authService } from './services/authService';
+import MobileBanner from './components/MobileBanner';
 
 const ROLE_TABS = {
   admin:       ['aktif', 'kumeler', 'harita', 'ekipler', 'kalibrasyon', 'dogrulanmamislar', 'profile'],
@@ -93,18 +94,24 @@ function App() {
   if (!user) {
     if (authView === 'Login') {
       return (
-        <Login
-          onLoginSuccess={handleLoginSuccess}
-          onSwitchToRegister={() => setAuthView('Register')}
-        />
+        <>
+          <MobileBanner />
+          <Login
+            onLoginSuccess={handleLoginSuccess}
+            onSwitchToRegister={() => setAuthView('Register')}
+          />
+        </>
       );
     }
     if (authView === 'Register') {
       return (
-        <Register
-          onRegisterSuccess={handleRegisterSuccess}
-          onSwitchToLogin={() => setAuthView('Login')}
-        />
+        <>
+          <MobileBanner />
+          <Register
+            onRegisterSuccess={handleRegisterSuccess}
+            onSwitchToLogin={() => setAuthView('Login')}
+          />
+        </>
       );
     }
   }
@@ -112,6 +119,7 @@ function App() {
   // --- KULLANICI GİRİŞ YAPMIŞSA (Ana Panel Arayüzü) ---
   return (
     <div className="flex h-screen overflow-hidden">
+      <MobileBanner />
       
       {/* SOL MENÜ: Senin propların + kimlik bilgisi */}
       <Sidebar 
